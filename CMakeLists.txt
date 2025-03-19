@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(spdlog CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h" REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 add_executable(${targetName} "Code/main.cpp")
 
@@ -33,10 +34,12 @@ foreach(sourceFile IN ITEMS ${sourceFiles})
 endforeach()
 
 target_compile_options(${targetName} PRIVATE /utf-8)
+target_compile_definitions(${targetName} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 target_include_directories(${targetName} PRIVATE ${STB_INCLUDE_DIRS})
 target_link_libraries(${targetName} PRIVATE spdlog::spdlog)
 target_link_libraries(${targetName} PRIVATE magic_enum::magic_enum)
+target_link_libraries(${targetName} PRIVATE glm::glm)
   
 # Precompiled headers and force include for pch
 target_precompile_headers(${targetName} PRIVATE Code/Core/Utilities/pch.hpp)

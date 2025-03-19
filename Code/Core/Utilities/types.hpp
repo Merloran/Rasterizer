@@ -26,3 +26,9 @@ template <typename Type>
 using DynamicArray = std::vector<Type>;
 
 using String = std::string;
+
+using FVector3 = glm::fvec3;
+using FVector2 = glm::fvec2;
+using FVector4 = glm::fvec4;
+
+using IVector2 = glm::ivec2;

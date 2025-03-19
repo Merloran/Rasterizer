@@ -5,6 +5,7 @@
 	[
 		"spdlog",
 		"magic-enum",
-        "stb"
+        "stb",
+		"glm"
 	]
 }

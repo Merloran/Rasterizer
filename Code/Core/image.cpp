@@ -18,18 +18,32 @@ Image::Image(const String& filePath)
     load_from_file(filePath);
 }
 
-Image::~Image()
+Image::Image(Image&& source) noexcept
+    : pixels(source.pixels)
+    , width(source.width)
+    , height(source.height)
 {
-    if (pixels != nullptr)
-    {
-        delete[] pixels;
-        pixels = nullptr;
-        width  = 0;
-        height = 0;
-    }
+    source.pixels = nullptr;
+    source.~Image();
 }
 
-Void Image::fill(Color color)
+Image::Image(const Image& source)
+    : pixels(new UInt8[source.width * source.height * sizeof(Color)])
+    , width(source.width)
+    , height(source.height)
+{
+    memcpy(pixels, source.pixels, source.width * source.height * sizeof(Color));
+}
+
+Image::~Image()
+{
+    delete[] pixels;
+    pixels = nullptr;
+    width  = 0;
+    height = 0;
+}
+
+Void Image::fill(const Color color)
 {
     for (UInt8 *current = pixels, *end = pixels + width * height * sizeof(Color);
          current < end;
@@ -41,12 +55,26 @@ Void Image::fill(Color color)
 
 Void Image::set_pixel(const UInt64 x, const UInt64 y, const Color color)
 {
-    memcpy(&pixels[x + y * width], &color, sizeof(Color));
+    memcpy(&pixels[(x + y * width) * sizeof(Color)], &color, sizeof(Color));
 }
 
-Color Image::get_pixel(UInt64 x, UInt64 y) const
+Color Image::get_pixel(const UInt64 x, const UInt64 y) const
 {
-    return pixels[x + y * width];
+    return *reinterpret_cast<Color*>(&pixels[(x + y * width) * sizeof(Color)]);
+}
+
+IVector2 Image::to_pixel_space(const Float32 x, const Float32 y) const
+{
+    const UInt64 pixelX = glm::clamp(Int32((x + 1.0f) * 0.5f * Float32(width - 1)), 0, width - 1);
+    const UInt64 pixelY = glm::clamp(Int32((y + 1.0f) * 0.5f * Float32(height - 1)), 0, height - 1);
+    return { pixelX, pixelY };
+}
+
+FVector2 Image::to_normalized_space(const Int32 x, const Int32 y) const
+{
+    const Float32 pixelX = glm::clamp(Float32(x) / Float32(width - 1) * 2.0f - 1.0f, -1.0f, 1.0f);
+    const Float32 pixelY = glm::clamp(Float32(y) / Float32(height - 1) * 2.0f - 1.0f, -1.0f, 1.0f);
+    return { pixelX, pixelY };
 }
 
 Color* Image::get_colors() const
@@ -71,6 +99,7 @@ UInt64 Image::get_height() const
 
 Void Image::save_to_file(const String& filePath) const
 {
+    stbi_flip_vertically_on_write(true);
     const Int32 result = stbi_write_png(filePath.c_str(), width, height, sizeof(Color), get_pixels(), 0);
 
     assert(result != 0 && "Failed to save path");
@@ -82,4 +111,16 @@ Void Image::load_from_file(const String& filePath)
     pixels = stbi_load(filePath.c_str(), &width, &height, &channels, sizeof(Color));
 
     assert(channels == sizeof(Color) && "Channels count is invalid!");
+}
+
+Void Image::print()
+{
+    for (Int32 y = 0; y < height; ++y)
+    {
+        for (Int32 x = 0; x < width * sizeof(Color); ++x)
+        {
+            printf("%d ", Int32(pixels[x + y * width * sizeof(Color)]));
+        }
+        printf("\n");
+    }
 }

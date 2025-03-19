@@ -37,6 +37,11 @@ struct Color
         return *reinterpret_cast<Int32 *>(&r);
     }
 
+    Void print()
+    {
+        printf("%d %d %d %d", Int32(r), Int32(g), Int32(b), Int32(a));
+    }
+
     static const Color RED  ;
     static const Color GREEN;
     static const Color BLUE ;
