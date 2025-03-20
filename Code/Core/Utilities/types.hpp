@@ -25,10 +25,7 @@ using Float64 = double;
 template <typename Type>
 using DynamicArray = std::vector<Type>;
 
+template <typename Type, UInt64 Size>
+using Array = std::array<Type, Size>;
+
 using String = std::string;
-
-using FVector3 = glm::fvec3;
-using FVector2 = glm::fvec2;
-using FVector4 = glm::fvec4;
-
-using IVector2 = glm::ivec2;

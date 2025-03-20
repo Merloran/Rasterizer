@@ -37,14 +37,24 @@ struct Color
         return *reinterpret_cast<Int32 *>(&r);
     }
 
-    Void print()
-    {
-        printf("%d %d %d %d", Int32(r), Int32(g), Int32(b), Int32(a));
-    }
-
     static const Color RED  ;
     static const Color GREEN;
     static const Color BLUE ;
     static const Color BLACK;
     static const Color WHITE;
+};
+
+template <>
+struct fmt::formatter<Color>
+{
+    constexpr auto parse(fmt::format_parse_context &ctx) -> decltype(ctx.begin())
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const Color &color, FormatContext &ctx) const -> decltype(ctx.out())
+    {
+        return fmt::format_to(ctx.out(), "(R: {}, G: {}, B: {}, A: {})", color.r, color.g, color.b, color.a);
+    }
 };

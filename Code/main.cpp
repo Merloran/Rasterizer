@@ -1,10 +1,9 @@
 #include "image.hpp"
 #include "rasterizer.hpp"
-#include <glm/gtx/string_cast.hpp>
 
 Int32 main()
 {
-    Image image { 512, 512, Color::RED };
+    Image image { 12, 12, Color::RED };
 
 	Rasterizer rasterizer;
 	FVector3 vertex1(-0.9f, 0.2f, 0.3f);

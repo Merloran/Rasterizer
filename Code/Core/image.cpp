@@ -65,8 +65,8 @@ Color Image::get_pixel(const UInt64 x, const UInt64 y) const
 
 IVector2 Image::to_pixel_space(const Float32 x, const Float32 y) const
 {
-    const UInt64 pixelX = Int32((x + 1.0f) * 0.5f * Float32(width - 1));
-    const UInt64 pixelY = Int32((y + 1.0f) * 0.5f * Float32(height - 1));
+    const Int32 pixelX = Int32((x + 1.0f) * 0.5f * Float32(width - 1));
+    const Int32 pixelY = Int32((y + 1.0f) * 0.5f * Float32(height - 1));
     return { pixelX, pixelY };
 }
 
@@ -117,10 +117,9 @@ Void Image::print()
 {
     for (Int32 y = 0; y < height; ++y)
     {
-        for (Int32 x = 0; x < width * sizeof(Color); ++x)
+        for (Int32 x = 0; x < width; ++x)
         {
-            printf("%d ", Int32(pixels[x + y * width * sizeof(Color)]));
+            SPDLOG_INFO("{}", get_pixel(x, y));
         }
-        printf("\n");
     }
 }
