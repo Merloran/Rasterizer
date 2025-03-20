@@ -65,15 +65,15 @@ Color Image::get_pixel(const UInt64 x, const UInt64 y) const
 
 IVector2 Image::to_pixel_space(const Float32 x, const Float32 y) const
 {
-    const UInt64 pixelX = glm::clamp(Int32((x + 1.0f) * 0.5f * Float32(width - 1)), 0, width - 1);
-    const UInt64 pixelY = glm::clamp(Int32((y + 1.0f) * 0.5f * Float32(height - 1)), 0, height - 1);
+    const UInt64 pixelX = Int32((x + 1.0f) * 0.5f * Float32(width - 1));
+    const UInt64 pixelY = Int32((y + 1.0f) * 0.5f * Float32(height - 1));
     return { pixelX, pixelY };
 }
 
 FVector2 Image::to_normalized_space(const Int32 x, const Int32 y) const
 {
-    const Float32 pixelX = glm::clamp(Float32(x) / Float32(width - 1) * 2.0f - 1.0f, -1.0f, 1.0f);
-    const Float32 pixelY = glm::clamp(Float32(y) / Float32(height - 1) * 2.0f - 1.0f, -1.0f, 1.0f);
+    const Float32 pixelX = Float32(x) / Float32(width - 1) * 2.0f - 1.0f;
+    const Float32 pixelY = Float32(y) / Float32(height - 1) * 2.0f - 1.0f;
     return { pixelX, pixelY };
 }
 

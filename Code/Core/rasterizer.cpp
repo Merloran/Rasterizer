@@ -29,6 +29,9 @@ FVector4 Rasterizer::calculate_triangle_bounds(const FVector2& vertex1, const FV
     FVector2 min = glm::min(glm::min(vertex1, vertex2), vertex3);
     FVector2 max = glm::max(glm::max(vertex1, vertex2), vertex3);
 
+    min = glm::clamp(min, -1.0f, 1.0f);
+    max = glm::clamp(max, -1.0f, 1.0f);
+
     return { min.x, min.y, max.x, max.y };
 }
 
