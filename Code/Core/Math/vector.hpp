@@ -28,7 +28,17 @@ template <Numeric Type>
 class Vector<Type, 2UI64>
 {
 public:
-    Type x, y;
+    union
+    {
+        struct
+        {
+            Type x, y;
+        };
+        struct
+        {
+            Type u, v;
+        };
+    };
 
     Vector() noexcept
         : x{}
@@ -84,7 +94,17 @@ template <Numeric Type>
 class Vector<Type, 3UI64>
 {
 public:
-    Type x, y, z;
+    union
+    {
+        struct
+        {
+            Type x, y, z;
+        };
+        struct
+        {
+            Type u, v, w;
+        };
+    };
 
     Vector() noexcept
         : x{}
@@ -149,7 +169,17 @@ template <Numeric Type>
 class Vector<Type, 4UI64>
 {
 public:
-    Type x, y, z, w;
+    union
+    {
+        struct
+        {
+            Type x, y, z, w;
+        };
+        struct
+        {
+            Type u, v, s, t;
+        };
+    };
 
     Vector() noexcept
         : x{}

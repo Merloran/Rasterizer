@@ -32,6 +32,16 @@ struct Color
         return *(&r + index);
     }
 
+    Color operator*(const Float32 value) const noexcept
+    {
+        return Color(r * value, g * value, b * value, a * value);
+    }
+
+    Color operator+(const Color other) const noexcept
+    {
+        return Color(r + other.r, g + other.g, b + other.b, a + other.a);
+    }
+
     explicit operator Int32()
     {
         return *reinterpret_cast<Int32 *>(&r);
@@ -43,6 +53,12 @@ struct Color
     static const Color BLACK;
     static const Color WHITE;
 };
+
+
+inline Color operator*(const Float32 value, const Color color)
+{
+    return Color(color.r * value, color.g * value, color.b * value, color.a * value);
+}
 
 template <>
 struct fmt::formatter<Color>

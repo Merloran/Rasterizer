@@ -225,4 +225,30 @@ namespace Math
     //TODO: implement
 #pragma endregion
 
+#pragma region DOT
+    template <Numeric Type>
+    Type dot(const Vector<Type, 2> &element1, const Vector<Type, 2> &element2) noexcept
+    {
+        return element1.x * element2.x + 
+               element1.y * element2.y;
+    }
+
+    template <Numeric Type>
+    Type dot(const Vector<Type, 3> &element1, const Vector<Type, 3> &element2) noexcept
+    {
+        return element1.x * element2.x + 
+               element1.y * element2.y + 
+               element1.z * element2.z;
+    }
+
+    template <Numeric Type>
+    Type dot(const Vector<Type, 4> &element1, const Vector<Type, 4> &element2) noexcept
+    {
+        return element1.x * element2.x + 
+               element1.y * element2.y + 
+               element1.z * element2.z + 
+               element1.w * element2.w;
+    }
+#pragma endregion
+
 }
