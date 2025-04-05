@@ -1,4 +1,5 @@
 #pragma once
+#include "buffer.hpp"
 
 struct Vertex;
 struct Color;
@@ -8,10 +9,13 @@ class Image;
 class Rasterizer
 {
 public:
+    Void draw_triangles(const DynamicArray<Vertex> &vertexes, Image &image, DepthBuffer &depthBuffer);
+
     Void draw_triangle(const Vertex &vertex1,
                        const Vertex &vertex2,
                        const Vertex &vertex3,
-                       Image &image);
+                       Image &image,
+                       DepthBuffer &depthBuffer);
 
 private:
     FVector4 calculate_triangle_bounds(const FVector2 &position1,

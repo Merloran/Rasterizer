@@ -4,26 +4,28 @@
 
 Int32 main()
 {
-    Image image { 512, 512, Color::WHITE };
+
+    const UVector2 resolution = { 512, 512 };
+    Image image { Int32(resolution.x), Int32(resolution.y), Color::WHITE };
+    DepthBuffer depth { resolution.x, resolution.y, 1.0f };
 
 	Rasterizer rasterizer;
-	Vertex v1 =
-	{
-		FVector3(-0.9f, 0.2f, 0.3f) - 0.4f,
-		Color::RED
-	};
-	Vertex v2 =
-	{
-		FVector3(0.6f, -0.7f, -0.4f),
-		Color::GREEN
-	};
-	Vertex v3 =
-	{
-		FVector3(0.3f, 1.0f, -0.1f),
-		Color::BLUE
-	};
+	DynamicArray<Vertex> vertexes;
 
-	rasterizer.draw_triangle(v1, v2, v3, image);
-	image.save_to_file("Hehe.png");
+	vertexes.emplace_back(FVector3(-0.5f,  0.5f,  0.8f), Color::BLUE);
+	vertexes.emplace_back(FVector3(-0.5f, -0.5f,  0.8f), Color::RED);
+	vertexes.emplace_back(FVector3( 0.5f, -0.5f,  0.8f), Color::GREEN);
+
+	vertexes.emplace_back(FVector3(-0.5f,  0.5f,  0.8f), Color::BLUE);
+	vertexes.emplace_back(FVector3( 0.5f, -0.5f,  0.8f), Color::GREEN);
+	vertexes.emplace_back(FVector3( 0.5f,  0.5f,  0.8f), Color::RED);
+    
+	vertexes.emplace_back(FVector3(-0.6f, -0.8f,  0.9f), Color::MAGENTA);
+	vertexes.emplace_back(FVector3( 0.6f,  0.5f, -0.3f), Color::CYAN);
+    vertexes.emplace_back(FVector3( 0.0f,  0.2f,  0.9f), Color::YELLOW);
+
+	rasterizer.draw_triangles(vertexes, image, depth);
+	image.save_to_file("../Images/Result.png");
+	Image(depth).save_to_file("../Images/Depth.png");
 	return 0;
 }

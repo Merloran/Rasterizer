@@ -52,6 +52,9 @@ struct Color
     static const Color BLUE ;
     static const Color BLACK;
     static const Color WHITE;
+    static const Color YELLOW;
+    static const Color MAGENTA;
+    static const Color CYAN;
 };
 
 

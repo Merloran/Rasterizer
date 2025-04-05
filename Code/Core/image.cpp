@@ -18,6 +18,21 @@ Image::Image(const String& filePath)
     load_from_file(filePath);
 }
 
+Image::Image(const DepthBuffer &buffer)
+    : pixels(new UInt8[buffer.get_height() * buffer.get_width() * sizeof(Color)])
+    , width(buffer.get_width())
+    , height(buffer.get_height())
+{
+    const Float32 *depthPixels = buffer.get_elements();
+    for (UInt64 i = 0; i < UInt64(width * height); ++i)
+    {
+        const UInt8 depthValue = UInt8((depthPixels[i] + 1.0f) * 0.5f * 255);
+
+        memset(&pixels[i * sizeof(Color)], depthValue, 3);
+        pixels[i * sizeof(Color) + 3] = 255;
+    }
+}
+
 Image::Image(Image&& source) noexcept
     : pixels(source.pixels)
     , width(source.width)

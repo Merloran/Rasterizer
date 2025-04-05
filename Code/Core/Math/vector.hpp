@@ -303,3 +303,7 @@ using FVector4 = Vector<Float32, 4UI64>;
 using IVector2 = Vector<Int32, 2UI64>;
 using IVector3 = Vector<Int32, 3UI64>;
 using IVector4 = Vector<Int32, 4UI64>;
+
+using UVector2 = Vector<UInt32, 2UI64>;
+using UVector3 = Vector<UInt32, 3UI64>;
+using UVector4 = Vector<UInt32, 4UI64>;

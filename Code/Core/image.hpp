@@ -1,4 +1,5 @@
 #pragma once
+#include "buffer.hpp"
 #include "Utilities/color.hpp"
 
 class Image
@@ -10,14 +11,15 @@ private:
 public:
     Image(Int32 imageWidth, Int32 imageHeight, Color initialColor = Color::WHITE);
     Image(const String &filePath);
+    Image(const DepthBuffer &buffer);
 
     Image(Image &&source) noexcept;
     Image(const Image &source);
 
     ~Image();
 
-    Void   fill(Color color);
-    Void   set_pixel(UInt64 x, UInt64 y, Color color);
+    Void fill(Color color);
+    Void set_pixel(UInt64 x, UInt64 y, Color color);
 
     [[nodiscard]]
     Color  get_pixel(UInt64 x, UInt64 y) const;
@@ -26,9 +28,10 @@ public:
     [[nodiscard]]
     FVector2 to_normalized_space(Int32 x, Int32 y) const;
 
+    [[nodiscard]]
     Color *get_colors() const;
+    [[nodiscard]]
     UInt8 *get_pixels() const;
-
     [[nodiscard]]
     UInt64 get_width() const;
     [[nodiscard]]
@@ -39,4 +42,3 @@ public:
 
     Void print();
 };
-
