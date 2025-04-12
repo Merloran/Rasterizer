@@ -37,6 +37,11 @@ struct Color
         return Color(r * value, g * value, b * value, a * value);
     }
 
+    Color operator/(const Float32 value) const noexcept
+    {
+        return Color(r / value, g / value, b / value, a / value);
+    }
+
     Color operator+(const Color other) const noexcept
     {
         return Color(r + other.r, g + other.g, b + other.b, a + other.a);

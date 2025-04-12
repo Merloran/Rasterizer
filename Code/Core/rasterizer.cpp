@@ -2,24 +2,35 @@
 
 #include "image.hpp"
 #include "Utilities/vertex.hpp"
+#include "Utilities/camera.hpp"
 
-Void Rasterizer::draw_triangles(const DynamicArray<Vertex>& vertexes, Image& image, DepthBuffer& depthBuffer)
+Void Rasterizer::draw_triangles(const DynamicArray<Vertex>& vertexes, const DynamicArray<UInt32> &indexes, Image& image, DepthBuffer& depthBuffer, const Camera &camera)
 {
     assert(vertexes.size() % 3 == 0 && "Triangles were not given!");
 
-    for (UInt64 i = 0; i < vertexes.size(); i += 3)
+    FMatrix4 viewProj = camera.get_projection() * camera.get_view();
+
+    for (UInt64 i = 0; i < indexes.size(); i += 3)
     {
-        draw_triangle(vertexes[i + 0],
-                      vertexes[i + 1],
-                      vertexes[i + 2],
+        FVector4 newPosition0 = viewProj * FVector4(vertexes[indexes[i + 0]].position, 1.0f);
+        FVector4 newPosition1 = viewProj * FVector4(vertexes[indexes[i + 1]].position, 1.0f);
+        FVector4 newPosition2 = viewProj * FVector4(vertexes[indexes[i + 2]].position, 1.0f);
+
+        draw_triangle({ newPosition0, vertexes[indexes[i + 0]].color },
+                      { newPosition1, vertexes[indexes[i + 1]].color },
+                      { newPosition2, vertexes[indexes[i + 2]].color },
                       image,
                       depthBuffer);
     }
 }
 
-Void Rasterizer::draw_triangle(const Vertex &vertex1, const Vertex &vertex2, const Vertex &vertex3, Image &image, DepthBuffer &depthBuffer)
+Void Rasterizer::draw_triangle(const FragmentVertex &vertex1, const FragmentVertex &vertex2, const FragmentVertex &vertex3, Image &image, DepthBuffer &depthBuffer)
 {
-    const FVector4 bounds = calculate_triangle_bounds(vertex1.position, vertex2.position, vertex3.position);
+    FVector3 ndcPosition1 = FVector3(vertex1.position) / vertex1.position.w;
+    FVector3 ndcPosition2 = FVector3(vertex2.position) / vertex2.position.w;
+    FVector3 ndcPosition3 = FVector3(vertex3.position) / vertex3.position.w;
+
+    const FVector4 bounds = calculate_triangle_bounds(ndcPosition1, ndcPosition2, ndcPosition3);
 
     IVector2 min = image.to_pixel_space(bounds.x, bounds.y);
     IVector2 max = image.to_pixel_space(bounds.z, bounds.w);
@@ -28,23 +39,22 @@ Void Rasterizer::draw_triangle(const Vertex &vertex1, const Vertex &vertex2, con
     {
         for (Int32 x = min.x; x <= max.x; ++x)
         {
-            FVector3 pixelPosition = FVector3(image.to_normalized_space(x, y), 0.0f);
-            if (is_in_triangle(vertex1.position, 
-                               vertex2.position,
-                               vertex3.position, 
+            FVector2 pixelPosition = image.to_normalized_space(x, y);
+            if (is_in_triangle(ndcPosition1, 
+                               ndcPosition2,
+                               ndcPosition3, 
                                pixelPosition))
             {
                 FVector3 barycentric;
-                calculate_barycentric(vertex1.position,
-                                      vertex2.position,
-                                      vertex3.position,
+                calculate_barycentric(ndcPosition1,
+                                      ndcPosition2,
+                                      ndcPosition3,
                                       pixelPosition, 
                                       barycentric);
 
-                const Float32 depth = barycentric.u * vertex1.position.z
-                                    + barycentric.v * vertex2.position.z
-                                    + barycentric.w * vertex3.position.z;
-
+                const Float32 depth = barycentric.u * ndcPosition1.z
+                                    + barycentric.v * ndcPosition2.z
+                                    + barycentric.w * ndcPosition3.z;
                 if (depth < depthBuffer.get_element(x, y))
                 {
                     const Color color = barycentric.u * vertex1.color
@@ -54,7 +64,6 @@ Void Rasterizer::draw_triangle(const Vertex &vertex1, const Vertex &vertex2, con
                     image.set_pixel(x, y, color);
                     depthBuffer.set_element(x, y, depth);
                 }
-
             }
         }
     }
@@ -71,7 +80,7 @@ FVector4 Rasterizer::calculate_triangle_bounds(const FVector2 &position1, const 
     return { min.x, min.y, max.x, max.y };
 }
 
-Bool Rasterizer::is_in_triangle(const FVector3& position1, const FVector3& position2, const FVector3& position3, const FVector3& point)
+Bool Rasterizer::is_in_triangle(const FVector2 &position1, const FVector2 &position2, const FVector2 &position3, const FVector2 &point)
 {
     const Float32 dx12 = position1.x - position2.x;
     const Float32 dx23 = position2.x - position3.x;
@@ -93,9 +102,9 @@ Bool Rasterizer::is_in_triangle(const FVector3& position1, const FVector3& posit
            (edge3 > 0.0f || (isTopLeft3 && edge3 >= 0.0f));
 }
 
-Float32 Rasterizer::calculate_line_side(const FVector3 &a, const FVector3 &b, const FVector3 &point)
+Float32 Rasterizer::calculate_line_side(const FVector2 &a, const FVector2 &b, const FVector2 &point)
 {
-    return (point.y - a.y) * (b.x - a.x) - (b.y - a.y) * (point.x - a.x);
+    return -((point.y - a.y) * (b.x - a.x) - (b.y - a.y) * (point.x - a.x)); // Clock-wise
 }
 
 Void Rasterizer::calculate_barycentric(const FVector2& vertex1, const FVector2& vertex2, const FVector2& vertex3, const FVector2& point, FVector3 & result)

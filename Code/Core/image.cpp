@@ -26,7 +26,7 @@ Image::Image(const DepthBuffer &buffer)
     const Float32 *depthPixels = buffer.get_elements();
     for (UInt64 i = 0; i < UInt64(width * height); ++i)
     {
-        const UInt8 depthValue = UInt8((depthPixels[i] + 1.0f) * 0.5f * 255);
+        const UInt8 depthValue = UInt8(depthPixels[i] * 255);
 
         memset(&pixels[i * sizeof(Color)], depthValue, 3);
         pixels[i * sizeof(Color) + 3] = 255;
