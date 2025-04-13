@@ -124,7 +124,7 @@ public:
         }
 	}
 
-    template <UInt64 OtherColumns> //TODO: Check it!!!
+    template <UInt64 OtherColumns>
     Matrix<Type, OtherColumns, Rows> operator*(const Matrix<Type, OtherColumns, Columns> &other) const noexcept
     {
         Matrix<Type, OtherColumns, Rows> result{};
@@ -156,7 +156,7 @@ public:
         return result;
     }
 
-    Vector<Type, Columns> operator*(const Vector<Type, Rows> &other) const noexcept //TODO: Check it!
+    Vector<Type, Columns> operator*(const Vector<Type, Rows> &vector) const noexcept
     {
         Vector<Type, Columns> result{};
 
@@ -164,7 +164,7 @@ public:
         {
             for (UInt64 x = 0UI64; x < Columns; ++x)
             {
-                result[x] += (*this)[y][x] * other[y];
+                result[x] += (*this)[y][x] * vector[y];
             }
         }
 
