@@ -1,4 +1,5 @@
 #pragma once
+#include "matrix.hpp"
 
 template <Numeric Type>
 class Quaternion
