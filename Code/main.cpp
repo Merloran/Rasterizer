@@ -9,8 +9,19 @@ Int32 main()
     Image image { Int32(resolution.x), Int32(resolution.y), Color::BLACK };
     DepthBuffer depth { resolution.x, resolution.y, 1.0f };
 
+    FMatrix4 modelMatrix = Math::translate(FMatrix4{ 1.0f }, 
+                                          { 0.0f, 0.0f, 4.0f });
+    modelMatrix = Math::rotate(modelMatrix, 
+                               Math::to_degrees(45.0f),
+                               {1.0f, 0.0f, 0.0f });
+
+    modelMatrix = Math::rotate(modelMatrix, 
+                               Math::to_degrees(45.0f),
+                               {0.0f, 1.0f, 0.0f });
+    modelMatrix = Math::scale(modelMatrix, { 0.5f });
+
     Camera camera;
-    camera.initialize({ -3.0f, 2.0f, -2.0f }, 70.0f, 2.0f);
+    camera.initialize({ 0.0f },40.0f, 1.0f);
     Rasterizer rasterizer;
 
 
@@ -74,7 +85,12 @@ Int32 main()
         20, 21, 22, 22, 23, 20, // Bottom
     };
 
-    rasterizer.draw_triangles(vertexes, indexes, image, depth, camera);
+
+    rasterizer.draw_triangles(vertexes, 
+                              indexes, 
+                              image, 
+                              depth, 
+                              { modelMatrix, camera.get_view(), camera.get_projection() });
     image.save_to_file("../Images/Result.png");
     Image(depth).save_to_file("../Images/Depth.png");
     return 0;

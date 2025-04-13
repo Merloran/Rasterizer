@@ -1,8 +1,11 @@
 #pragma once
+#include "Math/matrix.hpp"
+
+
 class Camera
 {
 public:
-	Void initialize(const FVector3& position, Float32 fovYDegrees, Float32 aspectRatio);
+	Void initialize(const FVector3& cameraPosition, Float32 cameraFovYDegrees, Float32 cameraAspectRatio);
 
 	[[nodiscard]]
 	FMatrix4 get_view() const;
@@ -22,9 +25,9 @@ public:
 	[[nodiscard]]
 	Float32 get_fov() const;
 
-	Void set_position(const FVector3& position);
-	Void set_view_bounds(const FVector2& viewBounds);
-	Void set_fov(Float32 fov);
+	Void set_position(const FVector3& cameraPosition);
+	Void set_view_bounds(const FVector2& cameraViewBounds);
+	Void set_fov_y(Float32 cameraFovY);
 
 	Void update_camera_vectors();
 

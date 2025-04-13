@@ -1,20 +1,20 @@
 #include "rasterizer.hpp"
 
 #include "image.hpp"
+#include "Math/matrix.hpp"
 #include "Utilities/vertex.hpp"
-#include "Utilities/camera.hpp"
 
-Void Rasterizer::draw_triangles(const DynamicArray<Vertex>& vertexes, const DynamicArray<UInt32> &indexes, Image& image, DepthBuffer& depthBuffer, const Camera &camera)
+Void Rasterizer::draw_triangles(const DynamicArray<Vertex>& vertexes, const DynamicArray<UInt32> &indexes, Image& image, DepthBuffer& depthBuffer, const MatrixBuffer &matrixBuffer)
 {
     assert(vertexes.size() % 3 == 0 && "Triangles were not given!");
 
-    FMatrix4 viewProj = camera.get_projection() * camera.get_view();
+    const FMatrix4 worldMatrix = matrixBuffer.projection * matrixBuffer.view * matrixBuffer.model;
 
     for (UInt64 i = 0; i < indexes.size(); i += 3)
     {
-        FVector4 newPosition0 = viewProj * FVector4(vertexes[indexes[i + 0]].position, 1.0f);
-        FVector4 newPosition1 = viewProj * FVector4(vertexes[indexes[i + 1]].position, 1.0f);
-        FVector4 newPosition2 = viewProj * FVector4(vertexes[indexes[i + 2]].position, 1.0f);
+        const FVector4 newPosition0 = worldMatrix * FVector4(vertexes[indexes[i + 0]].position, 1.0f);
+        const FVector4 newPosition1 = worldMatrix * FVector4(vertexes[indexes[i + 1]].position, 1.0f);
+        const FVector4 newPosition2 = worldMatrix * FVector4(vertexes[indexes[i + 2]].position, 1.0f);
 
         draw_triangle({ newPosition0, vertexes[indexes[i + 0]].color },
                       { newPosition1, vertexes[indexes[i + 1]].color },

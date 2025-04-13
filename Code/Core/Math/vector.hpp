@@ -6,6 +6,8 @@ template <Numeric Type, UInt64 Size>
 requires (Size > 1) // Just use a normal numeric Type like a normal person!
 class Vector
 {
+public:
+    static constexpr UInt64 SIZE = Size;
     Array<Type, Size> elements;
 
     Vector()
@@ -196,6 +198,20 @@ public:
         z += other.z;
     }
 
+    Vector operator*(const Vector &other) const noexcept
+    {
+        return { x * other.x,
+                 y * other.y,
+                 z * other.z };
+    }
+
+    Void operator*=(const Vector &other) noexcept
+    {
+        x *= other.x;
+        y *= other.y;
+        z *= other.z;
+    }
+
     Vector operator*(Type scalar) const noexcept
     {
         return { x * scalar,
@@ -208,6 +224,20 @@ public:
         x *= scalar;
         y *= scalar;
         z *= scalar;
+    }
+
+    Vector operator/(const Vector &other) const noexcept
+    {
+        return { x / other.x,
+                 y / other.y,
+                 z / other.z };
+    }
+
+    Void operator/=(const Vector &other) noexcept
+    {
+        x /= other.x;
+        y /= other.y;
+        z /= other.z;
     }
 
     Vector operator/(Type scalar) const noexcept
@@ -322,6 +352,22 @@ public:
         w += other.w;
     }
 
+    Vector operator*(Type scalar) const noexcept
+    {
+        return { x * scalar,
+                 y * scalar,
+                 z * scalar,
+                 w * scalar };
+    }
+
+    Void operator*=(Type scalar) noexcept
+    {
+        x *= scalar;
+        y *= scalar;
+        z *= scalar;
+        w *= scalar;
+    }
+
     Vector operator/(Type scalar) const noexcept
     {
         return { x / scalar,
@@ -341,7 +387,7 @@ public:
 };
 
 #pragma region SPDLOG
-template <typename Type, UInt64 Size>
+template <Numeric Type, UInt64 Size>
 struct fmt::formatter<Vector<Type, Size>>
 {
     constexpr auto parse(fmt::format_parse_context &ctx) -> decltype(ctx.begin())
@@ -375,6 +421,26 @@ struct fmt::formatter<Vector<Type, Size>>
         return out;
     }
 };
+#pragma endregion
+
+#pragma region OPERATORS
+
+template <Numeric Type>
+Vector<Type, 3UI64> operator/(Type scalar, const Vector<Type, 3UI64> &vector) noexcept
+{
+    return { scalar / vector.x,
+             scalar / vector.y,
+             scalar / vector.z };
+}
+
+template <Numeric Type>
+Vector<Type, 3UI64> operator*(Type scalar, const Vector<Type, 3UI64> &vector) noexcept
+{
+    return { scalar * vector.x,
+             scalar * vector.y,
+             scalar * vector.z };
+}
+
 #pragma endregion
 
 using FVector2 = Vector<Float32, 2UI64>;

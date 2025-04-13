@@ -1,15 +1,15 @@
 #include "camera.hpp"
 
-Void Camera::initialize(const FVector3 &position, Float32 fovYDegrees, Float32 aspectRatio)
+Void Camera::initialize(const FVector3 &cameraPosition, const Float32 cameraFovYDegrees, const Float32 cameraAspectRatio)
 {
-	this->position = position;
-	this->fovY = fovYDegrees;
-	this->aspectRatio = aspectRatio;
+	position = cameraPosition;
+	fovY = cameraFovYDegrees;
+	aspectRatio = cameraAspectRatio;
 	forward = { 0.0f,  0.0f, 1.0f };
 	up = { 0.0f,  1.0f,  0.0f };
 	right = { 1.0f,  0.0f,  0.0f };
-	viewBounds = { 0.1f,  10.0f };
-	yaw   = 45.0f;
+	viewBounds = { 0.1f,  5000.0f };
+	yaw   = 90.0f;
 	pitch = 0.0f;
 
 	update_camera_vectors();
@@ -56,19 +56,19 @@ Float32 Camera::get_fov() const
 	return fovY;
 }
 
-Void Camera::set_position(const FVector3 &position)
+Void Camera::set_position(const FVector3 &cameraPosition)
 {
-	this->position = position;
+	position = cameraPosition;
 }
 
-Void Camera::set_view_bounds(const FVector2 &viewBounds)
+Void Camera::set_view_bounds(const FVector2 &cameraViewBounds)
 {
-	this->viewBounds = viewBounds;
+	viewBounds = cameraViewBounds;
 }
 
-Void Camera::set_fov(const Float32 fov)
+Void Camera::set_fov_y(const Float32 cameraFovY)
 {
-	this->fovY = fov;
+	fovY = cameraFovY;
 }
 
 Void Camera::update_camera_vectors()

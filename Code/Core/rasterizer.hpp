@@ -1,5 +1,13 @@
 #pragma once
 #include "buffer.hpp"
+#include "Math/matrix.hpp"
+
+struct MatrixBuffer
+{
+    FMatrix4 model;
+    FMatrix4 view;
+    FMatrix4 projection;
+};
 
 struct FragmentVertex;
 class Camera;
@@ -15,7 +23,7 @@ public:
                         const DynamicArray<UInt32> &indexes,
                         Image &image, 
                         DepthBuffer &depthBuffer, 
-                        const Camera &camera);
+                        const MatrixBuffer &matrixBuffer);
 
     Void draw_triangle(const FragmentVertex &vertex1,
                        const FragmentVertex &vertex2,
