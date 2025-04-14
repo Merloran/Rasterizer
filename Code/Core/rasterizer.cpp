@@ -6,7 +6,7 @@
 
 Void Rasterizer::draw_triangles(const DynamicArray<Vertex>& vertexes, const DynamicArray<UInt32> &indexes, Image& image, DepthBuffer& depthBuffer, const MatrixBuffer &matrixBuffer)
 {
-    assert(vertexes.size() % 3 == 0 && "Triangles were not given!");
+    assert(indexes.size() % 3 == 0 && "Triangles were not given!");
 
     const FMatrix4 worldMatrix = matrixBuffer.projection * matrixBuffer.view * matrixBuffer.model;
 

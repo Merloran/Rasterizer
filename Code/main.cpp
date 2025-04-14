@@ -1,6 +1,8 @@
 #include "image.hpp"
 #include "rasterizer.hpp"
 #include "Utilities/camera.hpp"
+#include "Utilities/transform.hpp"
+#include "Utilities/utils.hpp"
 #include "Utilities/vertex.hpp"
 
 Int32 main()
@@ -9,88 +11,88 @@ Int32 main()
     Image image { Int32(resolution.x), Int32(resolution.y), Color::BLACK };
     DepthBuffer depth { resolution.x, resolution.y, 1.0f };
 
-    FMatrix4 modelMatrix = Math::translate(FMatrix4{ 1.0f }, 
-                                          { 0.0f, 0.0f, 4.0f });
-    modelMatrix = Math::rotate(modelMatrix, 
-                               Math::to_degrees(45.0f),
-                               {1.0f, 0.0f, 0.0f });
-
-    modelMatrix = Math::rotate(modelMatrix, 
-                               Math::to_degrees(45.0f),
-                               {0.0f, 1.0f, 0.0f });
-    modelMatrix = Math::scale(modelMatrix, { 0.5f });
+    Transform coneTransform{};
+    coneTransform.set_local_position({ 0.0f, 0.0f, 3.0f });
+    Transform cylinderTransform{};
+    cylinderTransform.set_local_position({ 0.0f, -1.0f, 3.0f });
+    Transform sphereTransform{};
+    sphereTransform.set_local_position({ 0.0f, 2.5f, 3.0f });
+    Transform torusTransform{};
+    torusTransform.set_local_position({ 0.0f, 1.5f, 3.0f });
+    torusTransform.set_local_scale({ 0.5f, 0.5f, 0.5f });
 
     Camera camera;
-    camera.initialize({ 0.0f },40.0f, 1.0f);
+    camera.initialize({ 0.0f, 1.0f, 0.0f },
+                      80.0f, 
+                      1.0f);
     Rasterizer rasterizer;
 
+    DynamicArray<Vertex> vertexes;
+    DynamicArray<UInt32> indexes;
 
-    // UV MAP        Y
-    //	    ____     + X
-    //     | TT |
-    //     |    |
-    //	   | BB |
-    // ____|    |____
-    //| LL   BT   RR |
-    //|____      ____|
-    //     | FF |
-    //     |____|
+    // GeometryGenerator::generate_cube(vertexes, indexes);
+    GeometryGenerator::generate_cone(vertexes, 
+                                     indexes, 
+                                     0.5f, 
+                                     2.0f, 
+                                     100, 
+                                     Color::RED,
+                                     Color::BLUE);
+    rasterizer.draw_triangles(vertexes,
+                              indexes,
+                              image,
+                              depth,
+                              { coneTransform.get_local_matrix(),
+                              camera.get_view(),
+                              camera.get_projection() });
 
-    DynamicArray<Vertex> vertexes =
-    {
-        // Front face
-        { { -1.0f, -1.0f, -1.0f }, Color::BLUE  }, // Left-Bottom
-        { {  1.0f, -1.0f, -1.0f }, Color::RED   }, // Right-Bottom
-        { {  1.0f,  1.0f, -1.0f }, Color::GREEN }, // Right-Top
-        { { -1.0f,  1.0f, -1.0f }, Color::YELLOW}, // Left-Top
+    vertexes.clear(); indexes.clear();
+    GeometryGenerator::generate_cylinder(vertexes,
+                                         indexes, 
+                                         0.5f, 
+                                         1.0f, 
+                                         16, 
+                                         Color::RED, 
+                                         Color::WHITE);
+    rasterizer.draw_triangles(vertexes,
+                              indexes,
+                              image,
+                              depth,
+                              { cylinderTransform.get_local_matrix(),
+                              camera.get_view(),
+                              camera.get_projection() });
 
-        // Back face
-        { {  1.0f, -1.0f,  1.0f }, Color::BLUE  }, // Right-Bottom
-        { { -1.0f, -1.0f,  1.0f }, Color::RED   }, // Left-Bottom
-        { { -1.0f,  1.0f,  1.0f }, Color::GREEN }, // Left-Top
-        { {  1.0f,  1.0f,  1.0f }, Color::YELLOW}, // Right-Top
-    
-        // Left face
-        { { -1.0f, -1.0f,  1.0f }, Color::BLUE  }, // Back-Bottom
-        { { -1.0f, -1.0f, -1.0f }, Color::RED   }, // Front-Bottom
-        { { -1.0f,  1.0f, -1.0f }, Color::GREEN }, // Front-Top
-        { { -1.0f,  1.0f,  1.0f }, Color::YELLOW}, // Back-Top
-    
-        // Right face
-        { {  1.0f, -1.0f, -1.0f }, Color::BLUE  }, // Front-Bottom
-        { {  1.0f, -1.0f,  1.0f }, Color::RED   }, // Back-Bottom
-        { {  1.0f,  1.0f,  1.0f }, Color::GREEN }, // Back-Top
-        { {  1.0f,  1.0f, -1.0f }, Color::YELLOW}, // Front-Top
-    
-        // Top face
-        { { -1.0f,  1.0f, -1.0f }, Color::BLUE  }, // Front-Left
-        { {  1.0f,  1.0f, -1.0f }, Color::RED   }, // Front-Right
-        { {  1.0f,  1.0f,  1.0f }, Color::GREEN }, // Back-Right
-        { { -1.0f,  1.0f,  1.0f }, Color::YELLOW}, // Back-Left
-    
-        // Bottom face
-        { { -1.0f, -1.0f,  1.0f }, Color::BLUE  }, // Back-Left
-        { {  1.0f, -1.0f,  1.0f }, Color::RED   }, // Back-Right
-        { {  1.0f, -1.0f, -1.0f }, Color::GREEN }, // Top-Right
-        { { -1.0f, -1.0f, -1.0f }, Color::YELLOW}, // Top-Left
-    };
-    
-    DynamicArray<UInt32> indexes =
-    {
-         0,  1,  2,  2,  3,  0, // Front
-         4,  5,  6,  6,  7,  4, // Back
-         8,  9, 10, 10, 11,  8, // Left
-        12, 13, 14, 14, 15, 12, // Right
-        16, 17, 18, 18, 19, 16, // Top
-        20, 21, 22, 22, 23, 20, // Bottom
-    };
+    vertexes.clear(); indexes.clear();
+    GeometryGenerator::generate_uv_sphere(vertexes,
+                                          indexes, 
+                                          0.5f, 
+                                          256, 
+                                          256, 
+                                          Color::WHITE);
+    rasterizer.draw_triangles(vertexes,
+                              indexes,
+                              image,
+                              depth,
+                              { sphereTransform.get_local_matrix(),
+                              camera.get_view(),
+                              camera.get_projection() });
 
+    vertexes.clear(); indexes.clear();
+    GeometryGenerator::generate_torus(vertexes,
+                                      indexes,
+                                      1.0f,
+                                      0.5f,
+                                      16,
+                                      8,
+                                      Color::BLACK);
+    rasterizer.draw_triangles(vertexes,
+                              indexes,
+                              image,
+                              depth,
+                              { torusTransform.get_local_matrix(),
+                              camera.get_view(),
+                              camera.get_projection() });
 
-    rasterizer.draw_triangles(vertexes, 
-                              indexes, 
-                              image, 
-                              depth, 
-                              { modelMatrix, camera.get_view(), camera.get_projection() });
     image.save_to_file("../Images/Result.png");
     Image(depth).save_to_file("../Images/Depth.png");
     return 0;

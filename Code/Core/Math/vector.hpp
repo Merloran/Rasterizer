@@ -170,6 +170,11 @@ public:
         return *(reinterpret_cast<Type *>(this) + index);
     }
 
+    Vector operator-() noexcept
+    {
+        return { -x, -y, -z };
+    }
+
     Vector operator-(const Vector &other) const noexcept
     {
         return { x - other.x,

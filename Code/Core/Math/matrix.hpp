@@ -174,16 +174,20 @@ public:
     Void operator*=(const Matrix &other) noexcept
     requires (Columns == Rows)
     {
+        Matrix result{};
+
         for (UInt64 y = 0UI64; y < Columns; ++y)
         {
             for (UInt64 x = 0UI64; x < Rows; ++x)
             {
                 for (UInt64 i = 0UI64; i < Columns; ++i)
                 {
-                    (*this)[i][x] *= other[y][i];
+                    result[y][x] += (*this)[i][x] * other[y][i];
                 }
             }
         }
+
+        *this = result;
     }
 
     Void operator*=(Type scalar) noexcept

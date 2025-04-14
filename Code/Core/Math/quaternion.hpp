@@ -22,12 +22,12 @@ public:
 
     Quaternion(const Vector<Type, 3UI64> &axis, Type angleRadians = Type(0)) noexcept
     {
-        axis = Math::normalize(axis);
+        Vector<Type, 3UI64> normAxis = Math::normalize(axis);
         Type halfAngle = angleRadians * Type(0.5);
         Type sinHalf   = std::sin(halfAngle);
-        x = axis.x * sinHalf;
-        y = axis.y * sinHalf;
-        z = axis.z * sinHalf;
+        x = normAxis.x * sinHalf;
+        y = normAxis.y * sinHalf;
+        z = normAxis.z * sinHalf;
         w = std::cos(halfAngle);
     }
 
@@ -92,8 +92,8 @@ public:
         Type invDenominator = Type(1) / denominator;
 
         return { (w * other.w + Math::dot(selfImaginary, otherImaginary)) * invDenominator,
-                (otherImaginary * -w + 
-                 selfImaginary * other.w - Math::cross(selfImaginary,otherImaginary)) * invDenominator };
+                 (otherImaginary * -w + 
+                  selfImaginary * other.w - Math::cross(selfImaginary,otherImaginary)) * invDenominator };
     }
 
     Void operator/=(const Quaternion &other) noexcept
@@ -110,6 +110,19 @@ public:
                        Math::cross(selfImaginary, otherImaginary)) * invDenominator;
 
         w = (w * other.w + Math::dot(selfImaginary, otherImaginary)) * invDenominator;
+    }
+
+    Quaternion operator/(Type scalar) const noexcept
+    {
+        return { x / scalar, y / scalar, z / scalar, w / scalar };
+    }
+
+    Void operator/=(Type scalar) noexcept
+    {
+        x /= scalar;
+        y /= scalar;
+        z /= scalar;
+        w /= scalar;
     }
 
     [[nodiscard]]
