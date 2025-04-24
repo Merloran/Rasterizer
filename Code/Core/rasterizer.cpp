@@ -4,24 +4,110 @@
 #include "Math/matrix.hpp"
 #include "Utilities/vertex.hpp"
 
-Void Rasterizer::draw_triangles(const DynamicArray<Vertex>& vertexes, const DynamicArray<UInt32> &indexes, Image& image, DepthBuffer& depthBuffer, const MatrixBuffer &matrixBuffer)
+Void Rasterizer::draw_mesh(const DynamicArray<Vertex>& vertexes, const DynamicArray<UInt32> &indexes, Image& image, DepthBuffer& depthBuffer, const UniformBuffer &uniformBuffer)
 {
     assert(indexes.size() % 3 == 0 && "Triangles were not given!");
 
-    const FMatrix4 worldMatrix = matrixBuffer.projection * matrixBuffer.view * matrixBuffer.model;
-
     for (UInt64 i = 0; i < indexes.size(); i += 3)
     {
-        const FVector4 newPosition0 = worldMatrix * FVector4(vertexes[indexes[i + 0]].position, 1.0f);
-        const FVector4 newPosition1 = worldMatrix * FVector4(vertexes[indexes[i + 1]].position, 1.0f);
-        const FVector4 newPosition2 = worldMatrix * FVector4(vertexes[indexes[i + 2]].position, 1.0f);
-
-        draw_triangle({ newPosition0, vertexes[indexes[i + 0]].color },
-                      { newPosition1, vertexes[indexes[i + 1]].color },
-                      { newPosition2, vertexes[indexes[i + 2]].color },
+        draw_triangle(process_vertex(vertexes[indexes[i + 0]], uniformBuffer),
+                      process_vertex(vertexes[indexes[i + 1]], uniformBuffer),
+                      process_vertex(vertexes[indexes[i + 2]], uniformBuffer),
                       image,
                       depthBuffer);
     }
+}
+
+FragmentVertex Rasterizer::process_vertex(const Vertex& vertex, const UniformBuffer &uniformBuffer)
+{
+    const FVector4 worldPosition = uniformBuffer.model * FVector4(vertex.position, 1.0f);
+    const FVector4 clipPosition  = uniformBuffer.viewProjection * worldPosition;
+
+    FVector3 normal = Math::normalize(Math::transpose(Math::inverse(uniformBuffer.model)) * vertex.normal);
+    FVector3 lightingColor = 0.0f;
+    for (const Light &light : uniformBuffer.lights)
+    {
+        switch (light.type)
+        {
+            case ELightType::Directional:
+            {
+                Float32  ambientStrength = 0.1f;
+                FVector3 ambient = FVector3(light.color) * ambientStrength;
+
+                FVector3 diffuse = Math::max(Math::dot(normal, -light.direction), 0.0f) * FVector3(light.color) * 0.7f;
+
+                Float32  specularStrength = 0.7f;
+                FVector3 viewDir    = Math::normalize(FVector3(worldPosition) - uniformBuffer.viewPosition);
+                FVector3 reflectDir = Math::normalize(Math::reflect(light.direction, normal));
+                FVector3 specular   = FVector3(light.color)
+                                    * (pow(Math::max(Math::dot(viewDir, reflectDir), 0.0f), 32.0f)
+                                    * specularStrength);
+
+                lightingColor += (ambient + diffuse + specular) * 2.0f;
+                break;
+            }
+            case ELightType::Point:
+            {
+                Float32  ambientStrength = 0.1f;
+                FVector3 ambient = FVector3(light.color) * ambientStrength;
+
+                FVector3 diffuse = Math::max(Math::dot(normal, -light.direction), 0.0f) * FVector3(light.color);
+                Float32  specularStrength = 0.7f;
+                FVector3 viewDir    = Math::normalize(FVector3(worldPosition) - uniformBuffer.viewPosition);
+                FVector3 lightDir   = Math::normalize(FVector3(worldPosition) - light.position);
+                FVector3 reflectDir = Math::normalize(Math::reflect(lightDir, normal));
+                FVector3 specular   = FVector3(light.color)
+                                    * (pow(Math::max(Math::dot(viewDir, reflectDir), 0.0f), 32.0f)
+                                    * specularStrength);
+
+                Float32 distance = Math::length(light.position - FVector3(worldPosition));
+                Float32 attenuation = light.intensity / (distance * distance + 0.0001f);
+
+                ambient  *= attenuation;
+                diffuse  *= attenuation;
+                specular *= attenuation;
+
+                lightingColor += ambient + diffuse + specular;
+                break;
+            }
+            case ELightType::Spot:
+            {
+                Float32  ambientStrength = 0.1f;
+                FVector3 ambient = FVector3(light.color) * ambientStrength;
+
+                FVector3 diffuse = Math::max(Math::dot(normal, -light.direction), 0.0f) * FVector3(light.color);
+
+                Float32  specularStrength = 0.7f;
+                FVector3 viewDir    = Math::normalize(FVector3(worldPosition) - uniformBuffer.viewPosition);
+                FVector3 reflectDir = Math::normalize(Math::reflect(light.direction, normal));
+                FVector3 specular   = FVector3(light.color)
+                                    * (pow(Math::max(Math::dot(viewDir, reflectDir), 0.0f), 32.0f)
+                                    * specularStrength);
+
+
+                FVector3 lightDir = Math::normalize(light.position - FVector3(worldPosition));
+                Float32 theta     = Math::dot(lightDir, -light.direction);
+                Float32 epsilon   = light.cutOff - light.outerCutOff;
+                Float32 intensity = Math::clamp((theta - light.outerCutOff) / epsilon, 0.0f, 1.0f);
+
+                Float32 distance    = Math::length(light.position - FVector3(worldPosition));
+                Float32 attenuation = light.intensity / (distance * distance + 0.0001f);
+
+                ambient  *= attenuation;
+                diffuse  *= attenuation * intensity;
+                specular *= attenuation * intensity;
+
+                lightingColor += ambient + diffuse + specular;
+                break;
+            }
+            case ELightType::None:
+            break;
+        }
+    }
+
+    FVector4 resultColor = FVector4(lightingColor, 1.0f) * vertex.color;
+
+    return { .position = clipPosition, .normal = normal, .color = resultColor };
 }
 
 Void Rasterizer::draw_triangle(const FragmentVertex &vertex1, const FragmentVertex &vertex2, const FragmentVertex &vertex3, Image &image, DepthBuffer &depthBuffer)
@@ -57,11 +143,14 @@ Void Rasterizer::draw_triangle(const FragmentVertex &vertex1, const FragmentVert
                                     + barycentric.w * ndcPosition3.z;
                 if (depth < depthBuffer.get_element(x, y))
                 {
-                    const Color color = barycentric.u * vertex1.color
-                                      + barycentric.v * vertex2.color
-                                      + barycentric.w * vertex3.color;
+                    const FVector4 color = vertex1.color * barycentric.u
+                                         + vertex2.color * barycentric.v
+                                         + vertex3.color * barycentric.w;
+                    //const FVector3 normal = barycentric.u * vertex1.normal
+                    //                      + barycentric.v * vertex2.normal
+                    //                      + barycentric.w * vertex3.normal;
 
-                    image.set_pixel(x, y, color);
+                    image.set_pixel(x, y, Math::to_color(color));
                     depthBuffer.set_element(x, y, depth);
                 }
             }
@@ -97,14 +186,14 @@ Bool Rasterizer::is_in_triangle(const FVector2 &position1, const FVector2 &posit
     const Float32 edge2 = calculate_line_side(position2, position3, point);
     const Float32 edge3 = calculate_line_side(position3, position1, point);
     
-    return (edge1 > 0.0f || (isTopLeft1 && edge1 >= 0.0f)) &&
-           (edge2 > 0.0f || (isTopLeft2 && edge2 >= 0.0f)) &&
-           (edge3 > 0.0f || (isTopLeft3 && edge3 >= 0.0f));
+    return (edge1 < 0.0f || (isTopLeft1 && edge1 <= 0.0f)) &&
+           (edge2 < 0.0f || (isTopLeft2 && edge2 <= 0.0f)) &&
+           (edge3 < 0.0f || (isTopLeft3 && edge3 <= 0.0f));
 }
 
 Float32 Rasterizer::calculate_line_side(const FVector2 &a, const FVector2 &b, const FVector2 &point)
 {
-    return -((point.y - a.y) * (b.x - a.x) - (b.y - a.y) * (point.x - a.x)); // Clock-wise
+    return (point.y - a.y) * (b.x - a.x) - (b.y - a.y) * (point.x - a.x); // Clock-wise
 }
 
 Void Rasterizer::calculate_barycentric(const FVector2& vertex1, const FVector2& vertex2, const FVector2& vertex3, const FVector2& point, FVector3 & result)

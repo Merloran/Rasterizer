@@ -1,4 +1,5 @@
 #pragma once
+#include "Utilities/color.hpp"
 template <typename T>
 concept Numeric = std::is_arithmetic_v<T>;
 
@@ -62,6 +63,11 @@ public:
     Vector(Type value) noexcept
         : x{ value }
         , y{ value }
+    {}
+
+    Vector(Color color) noexcept
+        : x{ Type(color.r) / Type(255) }
+        , y{ Type(color.g) / Type(255) }
     {}
 
     Vector(const Vector<Type, 3UI64> &other) noexcept
@@ -145,6 +151,13 @@ public:
         , z{ value }
     {}
 
+    Vector(Color color) noexcept
+        : x{ Type(color.r) / Type(255) }
+        , y{ Type(color.g) / Type(255) }
+        , z{ Type(color.b) / Type(255) }
+    {}
+
+
     Vector(const Vector<Type, 2UI64> &other, Type valueZ = {}) noexcept
         : x{ other.x }
         , y{ other.y }
@@ -170,7 +183,7 @@ public:
         return *(reinterpret_cast<Type *>(this) + index);
     }
 
-    Vector operator-() noexcept
+    Vector operator-() const noexcept
     {
         return { -x, -y, -z };
     }
@@ -298,6 +311,13 @@ public:
         , w{ value }
     {}
 
+    Vector(Color color) noexcept
+        : x{ Type(color.r) / Type(255) }
+        , y{ Type(color.g) / Type(255) }
+        , z{ Type(color.b) / Type(255) }
+        , w{ Type(color.a) / Type(255) }
+    {}
+
     Vector(const Vector<Type, 2UI64> &other, Type valueZ = {}, Type valueW = {}) noexcept
         : x{ other.x }
         , y{ other.y }
@@ -356,6 +376,23 @@ public:
         z += other.z;
         w += other.w;
     }
+
+    Vector operator*(const Vector &other) const noexcept
+    {
+        return { x * other.x,
+                 y * other.y,
+                 z * other.z,
+                 w * other.w };
+    }
+
+    Void operator*=(const Vector &other) noexcept
+    {
+        x *= other.x;
+        y *= other.y;
+        z *= other.z;
+        w *= other.w;
+    }
+
 
     Vector operator*(Type scalar) const noexcept
     {
@@ -444,6 +481,18 @@ Vector<Type, 3UI64> operator*(Type scalar, const Vector<Type, 3UI64> &vector) no
     return { scalar * vector.x,
              scalar * vector.y,
              scalar * vector.z };
+}
+
+template <Numeric Type>
+Vector<Type, 4UI64> operator*(const Vector<Type, 4UI64> &vector, const Color color)
+{
+    return { Type(color.r) * vector.x, Type(color.g) * vector.y,  Type(color.b) * vector.z, Type(color.a) * vector.w };
+}
+
+template <Numeric Type>
+Vector<Type, 4UI64> operator*(const Color color, const Vector<Type, 4UI64> &vector)
+{
+    return { Type(color.r) * vector.x, Type(color.g) * vector.y,  Type(color.b) * vector.z, Type(color.a) * vector.w };
 }
 
 #pragma endregion

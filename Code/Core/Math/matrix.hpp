@@ -309,6 +309,29 @@ namespace Math
         return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
     }
 
+    template <Numeric Type>
+    Type determinant(const Matrix<Type, 4UI64, 4UI64> &matrix) noexcept
+    {
+        const Type &a = matrix[0][0], &b = matrix[0][1], &c = matrix[0][2], &d = matrix[0][3];
+        const Type &e = matrix[1][0], &f = matrix[1][1], &g = matrix[1][2], &h = matrix[1][3];
+        const Type &i = matrix[2][0], &j = matrix[2][1], &k = matrix[2][2], &l = matrix[2][3];
+        const Type &m = matrix[3][0], &n = matrix[3][1], &o = matrix[3][2], &p = matrix[3][3];
+
+        Type s0 = k * p - o * l;
+        Type s1 = j * p - n * l;
+        Type s2 = j * o - n * k;
+        Type s3 = i * p - m * l;
+        Type s4 = i * o - m * k;
+        Type s5 = i * n - m * j;
+
+        Type c0 = f * s0 - g * s1 + h * s2;
+        Type c1 = e * s0 - g * s3 + h * s4;
+        Type c2 = e * s1 - f * s3 + h * s5;
+        Type c3 = e * s2 - f * s4 + g * s5;
+
+        return a * c0 - b * c1 + c * c2 - d * c3;
+    }
+
     template <Numeric Type, UInt64 Columns, UInt64 Rows>
     Type determinant(const Matrix<Type, Columns, Rows> &matrix) noexcept
     {
@@ -335,6 +358,71 @@ namespace Math
                     * determinant(reshape(matrix, y, x));
             }
         }
+        return result;
+    }
+
+    template <Numeric Type>
+    Matrix<Type, 4UI64, 4UI64> inverse(const Matrix<Type, 4UI64, 4UI64> &matrix) noexcept
+    {
+        const Type &a = matrix[0][0], &b = matrix[0][1], &c = matrix[0][2], &d = matrix[0][3];
+        const Type &e = matrix[1][0], &f = matrix[1][1], &g = matrix[1][2], &h = matrix[1][3];
+        const Type &i = matrix[2][0], &j = matrix[2][1], &k = matrix[2][2], &l = matrix[2][3];
+        const Type &m = matrix[3][0], &n = matrix[3][1], &o = matrix[3][2], &p = matrix[3][3];
+
+        Type s0 = k * p - o * l;
+        Type s1 = j * p - n * l;
+        Type s2 = j * o - n * k;
+        Type s3 = i * p - m * l;
+        Type s4 = i * o - m * k;
+        Type s5 = i * n - m * j;
+
+        Type c0 = f * s0 - g * s1 + h * s2;
+        Type c1 = e * s0 - g * s3 + h * s4;
+        Type c2 = e * s1 - f * s3 + h * s5;
+        Type c3 = e * s2 - f * s4 + g * s5;
+
+        Type det = a * c0 - b * c1 + c * c2 - d * c3;
+
+        assert(abs(det) > EPSILON && "Singular matrix cannot be inverted!");
+
+        Type invDet = 1.0f / det;
+
+        Type s6 = g * p - o * h;
+        Type s7 = f * p - n * h;
+        Type s8 = f * o - n * g;
+        Type s9 = e * p - m * h;
+        Type s10 = e * o - m * g;
+        Type s11 = e * n - m * f;
+
+        Type s12 = g * l - k * h;
+        Type s13 = f * l - j * h;
+        Type s14 = f * k - j * g;
+        Type s15 = e * l - i * h;
+        Type s16 = e * k - i * g;
+        Type s17 = e * j - i * f;
+
+        Matrix<Type, 4UI64, 4UI64> result;
+
+        result[0][0] = c0 * invDet;
+        result[0][1] = -(b * s0  - c * s1  + d * s2 ) * invDet;
+        result[0][2] =  (b * s6  - c * s7  + d * s8 ) * invDet;
+        result[0][3] = -(b * s12 - c * s13 + d * s14) * invDet;
+
+        result[1][0] = -c1 * invDet;
+        result[1][1] =  (a * s0  - c * s3  + d * s4 ) * invDet;
+        result[1][2] = -(a * s6  - c * s9  + d * s10) * invDet;
+        result[1][3] =  (a * s12 - c * s15 + d * s16) * invDet;
+
+        result[2][0] = c2 * invDet;
+        result[2][1] = -(a * s1  - b * s3  + d * s5 ) * invDet;
+        result[2][2] =  (a * s7  - b * s9  + d * s11) * invDet;
+        result[2][3] = -(a * s13 - b * s15 + d * s17) * invDet;
+
+        result[3][0] = -c3 * invDet;
+        result[3][1] =  (a * s2  - b * s4  + c * s5 ) * invDet;
+        result[3][2] = -(a * s8  - b * s10 + c * s11) * invDet;
+        result[3][3] =  (a * s14 - b * s16 + c * s17) * invDet;
+
         return result;
     }
 

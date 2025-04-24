@@ -20,7 +20,7 @@ public:
         , w(w)
     {}
 
-    Quaternion(const Vector<Type, 3UI64> &axis, Type angleRadians = Type(0)) noexcept
+    Quaternion(const Vector<Type, 3UI64> &axis, Type angleRadians) noexcept
     {
         Vector<Type, 3UI64> normAxis = Math::normalize(axis);
         Type halfAngle = angleRadians * Type(0.5);
@@ -29,6 +29,25 @@ public:
         y = normAxis.y * sinHalf;
         z = normAxis.z * sinHalf;
         w = std::cos(halfAngle);
+    }
+
+    Quaternion(const Vector<Type, 3UI64> &eulerRadians) noexcept
+    {
+        Type roll  = eulerRadians.x;
+        Type pitch = eulerRadians.y;
+        Type yaw   = eulerRadians.z;
+
+        Type cr = std::cos(roll  * Type(0.5));
+        Type sr = std::sin(roll  * Type(0.5));
+        Type cp = std::cos(pitch * Type(0.5));
+        Type sp = std::sin(pitch * Type(0.5));
+        Type cy = std::cos(yaw   * Type(0.5));
+        Type sy = std::sin(yaw   * Type(0.5));
+
+        w = cr * cp * cy + sr * sp * sy;
+        x = sr * cp * cy - cr * sp * sy;
+        y = cr * sp * cy + sr * cp * sy;
+        z = cr * cp * sy - sr * sp * cy;
     }
 
     Quaternion operator+(const Quaternion &other) const noexcept

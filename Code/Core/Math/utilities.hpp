@@ -3,7 +3,7 @@
 
 namespace Math
 {
-    constexpr Float32 EPSILON         = 0.00000095367431640625f;
+    constexpr Float32 EPSILON         = 0.00000000023283064365386962890625f;
     constexpr Float32 PI              = 3.1415926535897932384626433832795f;
     constexpr Float32 HALF_PI         = PI / 2.0f;
     constexpr Float32 ONE_OVER_PI     = 1.0f / PI;
@@ -374,5 +374,63 @@ namespace Math
         return degrees * (180.0f / PI);
     }
 #pragma endregion
+
+#pragma region TO_COLOR
+    template <Numeric Type>
+    Color to_color(const Vector<Type, 4UI64> &vector) noexcept
+    {
+        Color result;
+        result.r = UInt8(clamp(vector.x * Type(255), Type(0), Type(255)));
+        result.g = UInt8(clamp(vector.y * Type(255), Type(0), Type(255)));
+        result.b = UInt8(clamp(vector.z * Type(255), Type(0), Type(255)));
+        result.a = UInt8(clamp(vector.w * Type(255), Type(0), Type(255)));
+
+        return result;
+    }
+
+    template <Numeric Type>
+    Color to_color(const Vector<Type, 3UI64> &vector) noexcept
+    {
+        Color result;
+        result.r = UInt8(clamp(vector.x * Type(255), Type(0), Type(255)));
+        result.g = UInt8(clamp(vector.y * Type(255), Type(0), Type(255)));
+        result.b = UInt8(clamp(vector.z * Type(255), Type(0), Type(255)));
+        result.a = 255UI8;
+
+        return result;
+    }
+
+    template <Numeric Type>
+    Color to_color(const Vector<Type, 2UI64> &vector) noexcept
+    {
+        Color result;
+        result.r = UInt8(clamp(vector.x * Type(255), Type(0), Type(255)));
+        result.g = UInt8(clamp(vector.y * Type(255), Type(0), Type(255)));
+        result.b = 0UI8;
+        result.a = 255UI8;
+
+        return result;
+    }
+#pragma endregion
+
+    template <Numeric Type>
+    Vector<Type, 3UI64> reflect(const Vector<Type, 3UI64> &incident, const Vector<Type, 3UI64> &normal)
+    {
+        return incident - normal * (Type(2) * Math::dot(incident, normal));
+    }
+
+    template <Numeric Type>
+    Vector<Type, 3UI64> refract(const Vector<Type, 3UI64> &incident, const Vector<Type, 3UI64> &normal, Type eta)
+    {
+        Type dot = Math::dot(incident, normal);
+        Type k = Type(1) - eta * eta * (Type(1) - dot * dot);
+
+        if (k < Type(0)) 
+        {
+            return {};
+        }
+
+        return incident * eta - normal * (eta * dot + std::sqrt(k));
+    }
 
 }

@@ -9,7 +9,7 @@ Void Camera::initialize(const FVector3 &cameraPosition, const Float32 cameraFovY
 	up = { 0.0f,  1.0f,  0.0f };
 	right = { 1.0f,  0.0f,  0.0f };
 	viewBounds = { 0.1f,  5000.0f };
-	yaw   = 90.0f;
+	yaw   = -90.0f;
 	pitch = 0.0f;
 
 	update_camera_vectors();

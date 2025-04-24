@@ -44,22 +44,22 @@ public:
 
 
 
-    Void set_global_euler_rotation_radians(const FVector3 &globalEulerAnglesRadians)
+    Void set_global_euler_radians(const FVector3 &globalEulerAnglesRadians)
     {
         set_global_rotation(FQuaternion(globalEulerAnglesRadians));
     }
 
-    Void set_local_euler_rotation_radians(const FVector3 &localEulerAnglesRadians)
+    Void set_local_euler_radians(const FVector3 &localEulerAnglesRadians)
     {
         set_local_rotation(FQuaternion(localEulerAnglesRadians));
     }
 
-    Void set_global_euler_rotation_degrees(const FVector3 &globalEulerAnglesDegrees)
+    Void set_global_euler_degrees(const FVector3 &globalEulerAnglesDegrees)
     {
         set_global_rotation(FQuaternion(Math::to_radians(globalEulerAnglesDegrees)));
     }
 
-    Void set_local_euler_rotation_degrees(const FVector3 &localEulerAnglesDegrees)
+    Void set_local_euler_degrees(const FVector3 &localEulerAnglesDegrees)
     {
         set_local_rotation(FQuaternion(Math::to_radians(localEulerAnglesDegrees)));
     }

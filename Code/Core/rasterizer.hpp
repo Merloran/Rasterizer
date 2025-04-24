@@ -1,12 +1,15 @@
 #pragma once
 #include "buffer.hpp"
 #include "Math/matrix.hpp"
+#include "Utilities/light.hpp"
 
-struct MatrixBuffer
+struct UniformBuffer
 {
     FMatrix4 model;
-    FMatrix4 view;
-    FMatrix4 projection;
+    FMatrix4 viewProjection;
+    FVector3 viewPosition;
+
+    DynamicArray<Light> lights;
 };
 
 struct FragmentVertex;
@@ -19,11 +22,13 @@ class Image;
 class Rasterizer
 {
 public:
-    Void draw_triangles(const DynamicArray<Vertex> &vertexes,
-                        const DynamicArray<UInt32> &indexes,
-                        Image &image, 
-                        DepthBuffer &depthBuffer, 
-                        const MatrixBuffer &matrixBuffer);
+    Void draw_mesh(const DynamicArray<Vertex> &vertexes,
+                   const DynamicArray<UInt32> &indexes,
+                   Image &image, 
+                   DepthBuffer &depthBuffer, 
+                   const UniformBuffer &uniformBuffer);
+
+    FragmentVertex process_vertex(const Vertex &vertex, const UniformBuffer &uniformBuffer);
 
     Void draw_triangle(const FragmentVertex &vertex1,
                        const FragmentVertex &vertex2,
