@@ -351,15 +351,14 @@ namespace Math
     {
         const Vector<Type, 3UI64> invScale = Type(1) / extract_scale(matrix);
 
-        const Matrix<Type, 4UI64, 4UI64> rotationMatrix =
+        const Matrix<Type, 3UI64, 3UI64> rotationMatrix = 
         {
-            Vector<Type, 4UI64>(Vector<Type, 3UI64>(matrix[0]) * invScale.x),
-            Vector<Type, 4UI64>(Vector<Type, 3UI64>(matrix[1]) * invScale.y),
-            Vector<Type, 4UI64>(Vector<Type, 3UI64>(matrix[2]) * invScale.z),
-            Vector<Type, 4UI64>(Type(0), Type(0), Type(0), Type(1)),
+            Vector<Type, 3UI64>(matrix[0]) * invScale.x,
+            Vector<Type, 3UI64>(matrix[1]) * invScale.y,
+            Vector<Type, 3UI64>(matrix[2]) * invScale.z,
         };
 
-        const Quaternion<Type> result = to_quaternion(rotationMatrix);
+        const Quaternion<Type> result = to_quaternion(Matrix<Type, 4UI64, 4UI64>(rotationMatrix));
         return result;
     }
     

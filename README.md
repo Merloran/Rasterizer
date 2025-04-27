@@ -12,3 +12,7 @@ Color Image
 Depth Image
 
 ![Depth Image](Images/Depth.png)
+
+Normal Image
+
+![Normal Image](Images/Normal.png)

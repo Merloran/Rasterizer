@@ -6,7 +6,7 @@ template <typename Type, typename ElementType, UInt64 Size>
 concept VectorType = std::is_same_v<Type, Vector<ElementType, Size>>;
 
 template <Numeric Type, UInt64 Columns, UInt64 Rows>
-requires (Columns > 1 && Rows > 1)
+requires (Columns > 1UI64 && Rows > 1UI64)
 class Matrix
 {
 public:
@@ -15,13 +15,13 @@ public:
 
     Matrix() noexcept
     {
-        elements.fill(0);
+        elements.fill(Type(0));
     }
 
     Matrix(Type value) noexcept
         requires (Rows == Columns)
     {
-        elements.fill(0);
+        elements.fill(Type(0));
         for (UInt64 i = 0UI64; i < Columns * Rows; i += Columns + 1)
         {
             elements[i] = value;
@@ -32,7 +32,7 @@ public:
     requires (sizeof...(Args) == Columns * Rows)
     Matrix(Args... args) noexcept
     {
-        UInt64 i = 0;
+        UInt64 i = 0UI64;
         ((
             elements[i] = static_cast<Type>(args),
             ++i
@@ -43,11 +43,42 @@ public:
     requires (sizeof...(Args) == Rows)
     Matrix(const Args&... args) noexcept
     {
-        UInt64 i = 0;
+        UInt64 i = 0UI64;
         ((
             (*this)[i] = args,
             ++i
         ), ...);
+    }
+
+    // This is shrinking constructor, i.e. FMatrix3(fmatrix4)
+    template <UInt64 OtherColumns, UInt64 OtherRows>
+    Matrix(const Matrix<Type, OtherColumns,  OtherRows> &matrix) noexcept
+    requires (Rows == OtherRows - 1UI64 && Columns == OtherColumns - 1UI64)
+    {
+        for (UInt64 y = 0UI64; y < Rows; ++y)
+        {
+            for (UInt64 x = 0UI64; x < Columns; ++x)
+            {
+                (*this)[y][x] = matrix[y][x];
+            }
+        }
+    }
+
+
+    // This is extending constructor, i.e. FMatrix4(fmatrix3)
+    template <UInt64 OtherColumns, UInt64 OtherRows>
+    Matrix(const Matrix<Type, OtherColumns,  OtherRows> &matrix) noexcept
+    requires (Rows == OtherRows + 1UI64 && Columns == OtherColumns + 1UI64)
+    {
+        elements.fill(Type(0));
+        for (UInt64 y = 0UI64; y < OtherRows; ++y)
+        {
+            for (UInt64 x = 0UI64; x < OtherColumns; ++x)
+            {
+                (*this)[y][x] = matrix[y][x];
+            }
+        }
+        (*this)[OtherRows][OtherColumns] = Type(1);
     }
 
 #pragma region OPERATORS

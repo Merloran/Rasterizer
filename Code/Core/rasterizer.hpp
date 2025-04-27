@@ -3,16 +3,27 @@
 #include "Math/matrix.hpp"
 #include "Utilities/light.hpp"
 
+class Image;
+struct FragmentInput;
+
 struct UniformBuffer
 {
+    DynamicArray<Light> lights;
     FMatrix4 model;
     FMatrix4 viewProjection;
     FVector3 viewPosition;
-
-    DynamicArray<Light> lights;
+    bool isVertexLighting = false;
 };
 
-struct FragmentVertex;
+struct OutputBuffers
+{
+    Image       *colorBuffer  = nullptr;
+    Image       *normalBuffer = nullptr;
+    Image       *uvBuffer     = nullptr;
+    DepthBuffer *depthBuffer  = nullptr;
+};
+
+struct RasterizationInput;
 class Camera;
 struct Vertex;
 struct Color;
@@ -24,17 +35,20 @@ class Rasterizer
 public:
     Void draw_mesh(const DynamicArray<Vertex> &vertexes,
                    const DynamicArray<UInt32> &indexes,
-                   Image &image, 
-                   DepthBuffer &depthBuffer, 
+                   const OutputBuffers &buffers,
                    const UniformBuffer &uniformBuffer);
 
-    FragmentVertex process_vertex(const Vertex &vertex, const UniformBuffer &uniformBuffer);
+    RasterizationInput process_vertex(const Vertex &vertex, const UniformBuffer &uniformBuffer);
 
-    Void draw_triangle(const FragmentVertex &vertex1,
-                       const FragmentVertex &vertex2,
-                       const FragmentVertex &vertex3,
-                       Image &image,
-                       DepthBuffer &depthBuffer);
+    void process_fragment(const FragmentInput &fragment,
+                          const OutputBuffers &buffers,
+                          const UniformBuffer &uniformBuffer);
+
+    Void draw_triangle(const RasterizationInput &vertex1,
+                       const RasterizationInput &vertex2,
+                       const RasterizationInput &vertex3,
+                       const OutputBuffers &buffers,
+                       const UniformBuffer &uniformBuffer);
 
 private:
     FVector4 calculate_triangle_bounds(const FVector2 &position1,
