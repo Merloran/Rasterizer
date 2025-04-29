@@ -92,6 +92,12 @@ public:
         return *(reinterpret_cast<Type *>(this) + index);
     }
 
+    Vector operator*(const Vector & other) const noexcept
+    {
+        return { x * other.x,
+                 y * other.y };
+    }
+
     Vector operator-(const Vector & other) const noexcept
     {
         return { x - other.x,

@@ -25,103 +25,10 @@ RasterizationInput Rasterizer::process_vertex(const Vertex& vertex, const Unifor
     const FVector4 clipPosition  = uniformBuffer.viewProjection * worldPosition;
     FVector3 normal = Math::normalize(FMatrix3(Math::transpose(Math::inverse(uniformBuffer.model))) * vertex.normal);
 
-    if (uniformBuffer.isVertexLighting == false)
-    {
-        return { .position = clipPosition,
-                 .worldPosition = worldPosition,
-                 .worldNormal = normal,
-                 .color = vertex.color };
-    }
-
-    FVector3 lightingColor = 0.0f;
-
-    for (const Light &light : uniformBuffer.lights)
-    {
-        switch (light.type)
-        {
-            case ELightType::Directional:
-            {
-                Float32  ambientStrength = 0.1f;
-                FVector3 ambient = FVector3(light.color) * ambientStrength;
-
-                FVector3 diffuse = Math::max(Math::dot(normal, -light.direction), 0.0f) * FVector3(light.color) * 0.7f;
-
-                Float32  specularStrength = 0.7f;
-                FVector3 viewDir    = Math::normalize(uniformBuffer.viewPosition - FVector3(worldPosition));
-                FVector3 reflectDir = Math::normalize(Math::reflect(light.direction, normal));
-                FVector3 specular   = FVector3(light.color)
-                                    * (pow(Math::max(Math::dot(viewDir, reflectDir), 0.0f), 32.0f)
-                                    * specularStrength);
-
-                lightingColor += ambient + diffuse + specular;
-                break;
-            }
-            case ELightType::Point:
-            {
-                Float32  ambientStrength = 0.1f;
-                FVector3 ambient = FVector3(light.color) * ambientStrength;
-
-                FVector3 diffuse = Math::max(Math::dot(normal, -light.direction), 0.0f) * FVector3(light.color);
-                
-                Float32  specularStrength = 0.7f;
-                FVector3 viewDir    = Math::normalize(uniformBuffer.viewPosition - FVector3(worldPosition));
-                FVector3 lightDir   = Math::normalize(FVector3(worldPosition) - light.position);
-                FVector3 reflectDir = Math::normalize(Math::reflect(lightDir, normal));
-                FVector3 specular   = FVector3(light.color)
-                                    * (pow(Math::max(Math::dot(viewDir, reflectDir), 0.0f), 32.0f)
-                                    * specularStrength);
-
-                Float32 distance = Math::length(light.position - FVector3(worldPosition));
-                Float32 attenuation = light.intensity / (distance * distance + 0.0001f);
-
-                ambient  *= attenuation;
-                diffuse  *= attenuation;
-                specular *= attenuation;
-
-                lightingColor += ambient + diffuse + specular;
-                break;
-            }
-            case ELightType::Spot:
-            {
-                Float32  ambientStrength = 0.1f;
-                FVector3 ambient = FVector3(light.color) * ambientStrength;
-
-                FVector3 diffuse = Math::max(Math::dot(normal, -light.direction), 0.0f) * FVector3(light.color);
-
-                Float32  specularStrength = 0.7f;
-                FVector3 viewDir = Math::normalize(uniformBuffer.viewPosition - FVector3(worldPosition));
-                FVector3 reflectDir = Math::normalize(Math::reflect(light.direction, normal));
-                FVector3 specular   = FVector3(light.color)
-                                    * (pow(Math::max(Math::dot(viewDir, reflectDir), 0.0f), 32.0f)
-                                    * specularStrength);
-
-
-                FVector3 lightDir = Math::normalize(light.position - FVector3(worldPosition));
-                Float32 theta     = Math::dot(lightDir, -light.direction);
-                Float32 epsilon   = light.cutOff - light.outerCutOff;
-                Float32 intensity = Math::clamp((theta - light.outerCutOff) / epsilon, 0.0f, 1.0f);
-
-                Float32 distance    = Math::length(light.position - FVector3(worldPosition));
-                Float32 attenuation = light.intensity / (distance * distance + 0.0001f);
-
-                ambient  *= attenuation;
-                diffuse  *= attenuation * intensity;
-                specular *= attenuation * intensity;
-
-                lightingColor += ambient + diffuse + specular;
-                break;
-            }
-            case ELightType::None:
-            break;
-        }
-    }
-
-    FVector4 resultColor = FVector4(lightingColor, 1.0f) * vertex.color;
-
     return { .position = clipPosition,
              .worldPosition = worldPosition,
              .worldNormal = normal,
-             .color = resultColor };
+             .uv = vertex.uv };
 }
 
 Void Rasterizer::draw_triangle(const RasterizationInput &vertex1, const RasterizationInput &vertex2, const RasterizationInput &vertex3, const OutputBuffers &buffers, const UniformBuffer &uniformBuffer)
@@ -158,9 +65,9 @@ Void Rasterizer::draw_triangle(const RasterizationInput &vertex1, const Rasteriz
                 
                 if (buffers.depthBuffer == nullptr || depth < buffers.depthBuffer->get_element(x, y))
                 {
-                    const FVector4 color    = vertex1.color         * barycentric.u
-                                            + vertex2.color         * barycentric.v
-                                            + vertex3.color         * barycentric.w;
+                    const FVector2 uv       = vertex1.uv            * FVector2(barycentric.u)
+                                            + vertex2.uv            * FVector2(barycentric.v)
+                                            + vertex3.uv            * FVector2(barycentric.w);
 
                     FVector3       normal   = vertex1.worldNormal   * barycentric.u
                                             + vertex2.worldNormal   * barycentric.v
@@ -176,6 +83,11 @@ Void Rasterizer::draw_triangle(const RasterizationInput &vertex1, const Rasteriz
                         buffers.depthBuffer->set_element(x, y, depth);
                     }
 
+                    if (buffers.uvBuffer != nullptr)
+                    {
+                        buffers.uvBuffer->set_pixel(x, y, Math::to_color(FVector4(uv, 0.0f, 1.0f)));
+                    }
+
                     if (buffers.normalBuffer != nullptr)
                     {
                         buffers.normalBuffer->set_pixel(x, y, Math::to_color((normal + 1.0f) * 0.5f));
@@ -183,7 +95,7 @@ Void Rasterizer::draw_triangle(const RasterizationInput &vertex1, const Rasteriz
 
                     process_fragment({ .worldPosition = position, 
                                        .worldNormal = normal,
-                                       .color = color,
+                                       .uv = uv,
                                        .position = { x, y } },
                                      buffers,
                                      uniformBuffer);
@@ -195,9 +107,13 @@ Void Rasterizer::draw_triangle(const RasterizationInput &vertex1, const Rasteriz
 
 void Rasterizer::process_fragment(const FragmentInput &fragment, const OutputBuffers &buffers, const UniformBuffer &uniformBuffer)
 {
-    if (uniformBuffer.isVertexLighting)
+    if (uniformBuffer.isLightingOff)
     {
-        buffers.colorBuffer->set_pixel(fragment.position.x, fragment.position.y, Math::to_color(fragment.color));
+        const Image &texture = uniformBuffer.textures[uniformBuffer.currentTextureIndex];
+
+        IVector2 pixelPosition = texture.to_pixel_space(fragment.uv.x, fragment.uv.y);
+        FVector4 albedo = texture.get_pixel(pixelPosition.x, pixelPosition.y);
+        buffers.colorBuffer->set_pixel(fragment.position.x, fragment.position.y, Math::to_color(albedo));
         return;
     }
 
@@ -286,7 +202,12 @@ void Rasterizer::process_fragment(const FragmentInput &fragment, const OutputBuf
         }
     }
 
-    FVector4 resultColor = FVector4(lightingColor, 1.0f) * fragment.color;
+    const Image &texture = uniformBuffer.textures[uniformBuffer.currentTextureIndex];
+
+    IVector2 pixelPosition = texture.to_pixel_space(fragment.uv.x, fragment.uv.y);
+    FVector4 albedo = texture.get_pixel(pixelPosition.x, pixelPosition.y);
+
+    FVector4 resultColor = FVector4(lightingColor, 1.0f) * albedo;
 
     buffers.colorBuffer->set_pixel(fragment.position.x, fragment.position.y, Math::to_color(resultColor));
 }

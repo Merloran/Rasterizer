@@ -9,8 +9,7 @@ namespace GeometryGenerator
                                const Float32 majorRadius,
                                const Float32 minorRadius,
                                const UInt32 majorSegments,
-                               const UInt32 minorSegments,
-                               const Color &color)
+                               const UInt32 minorSegments)
     {
         assert(minorRadius <= majorRadius && majorSegments > 2UI32 && minorSegments > 1UI32);
         vertexes.reserve(majorSegments * minorSegments);
@@ -25,7 +24,8 @@ namespace GeometryGenerator
             const Float32 centerX = majorRadius * cosPhi;
             const Float32 centerY = 0.0f;
             const Float32 centerZ = majorRadius * sinPhi;
-    
+
+            const Float32 u = Float32(i) / Float32(majorSegments);
             for (UInt32 j = 0UI32; j < minorSegments; ++j)
             {
                 const Float32 theta    = 2.0f * Math::PI * Float32(j) / Float32(minorSegments);
@@ -39,8 +39,10 @@ namespace GeometryGenerator
                 Float32 x = centerX + minorRadius * dirX;
                 Float32 y = centerY + minorRadius * dirY;
                 Float32 z = centerZ + minorRadius * dirZ;
+
+                const Float32 v = Float32(j) / Float32(minorSegments);
     
-                vertexes.push_back(Vertex{ { x, y, z }, {}, color });
+                vertexes.push_back(Vertex{ { x, y, z }, {}, { u, v } });
             }
         }
     
@@ -82,7 +84,7 @@ namespace GeometryGenerator
             vertexes[indexes[i + 2]].normal += normal;
         }
 
-        for (auto &[position, normal, c] : vertexes)
+        for (auto &[position, normal, uv] : vertexes)
         {
             normal = Math::normalize(normal);
         }
@@ -92,26 +94,24 @@ namespace GeometryGenerator
                                    DynamicArray<UInt32> &indexes,
                                    const Float32 radius,
                                    const UInt32 rings,
-                                   const UInt32 segments,
-                                   const Color &color)
+                                   const UInt32 segments)
     {
         assert(rings > 1UI32 && segments > 1UI32);
         vertexes.reserve((rings + 1UI32) * (segments + 1UI32));
         indexes.reserve(rings * segments * 2UI32 * 3UI32);
-
-        for (UInt32 u = 0UI32; u <= rings; ++u)
+        for (UInt32 s = 0UI32; s <= rings; ++s)
         {
-            const Float32 phi = Math::PI * Float32(u) / Float32(rings) - Math::PI / 2.0f;
+            const Float32 phi = Math::PI * Float32(s) / Float32(rings) - Math::PI / 2.0f;
             Float32 y = radius * sin(phi);
             const Float32 cosPhiRadius = radius * cos(phi);
-
-            for (UInt32 v = 0UI32; v <= segments; ++v)
+            const Float32 v = 1.0f - Float32(s) / Float32(rings);
+            for (UInt32 t = 0UI32; t <= segments; ++t)
             {
-                const Float32 theta = 2.0f * Math::PI * Float32(v) / Float32(segments);
+                const Float32 theta = 2.0f * Math::PI * Float32(t) / Float32(segments);
                 Float32 x = cosPhiRadius * cos(theta);
                 Float32 z = cosPhiRadius * sin(theta);
-
-                vertexes.push_back(Vertex{ { x, y, z }, Math::normalize(FVector3{ x, y, z }), color });
+                const Float32 u = Float32(t) / Float32(segments);
+                vertexes.push_back(Vertex{ { x, y, z }, Math::normalize(FVector3{ x, y, z }), { u, v } });
             }
         }
 
@@ -119,70 +119,19 @@ namespace GeometryGenerator
         {
             const UInt32 ringStart = r * (segments + 1UI32);
             const UInt32 nextRingStart = (r + 1UI32) * (segments + 1UI32);
-
             for (UInt32 s = 0UI32; s < segments; ++s)
             {
                 UInt32 current = ringStart + s;
                 UInt32 next = ringStart + s + 1UI32;
                 UInt32 nextRingCurrent = nextRingStart + s;
                 UInt32 nextRingNext = nextRingStart + s + 1UI32;
-
                 // Square
                 indexes.push_back(nextRingCurrent);
                 indexes.push_back(current);
                 indexes.push_back(next);
-
                 indexes.push_back(nextRingCurrent);
                 indexes.push_back(next);
                 indexes.push_back(nextRingNext);
-            }
-        }
-    }
-
-    inline Void generate_plane(DynamicArray<Vertex> &vertexes,
-                               DynamicArray<UInt32> &indexes,
-                               const UInt32 widthSegments,
-                               const UInt32 depthSegments,
-                               const Color &color)
-    {
-        assert(widthSegments > 0UI32 && depthSegments > 0UI32);
-
-        vertexes.reserve((widthSegments + 1UI32) * (depthSegments + 1UI32));
-        indexes.reserve(widthSegments * depthSegments * 2UI32 * 3UI32);
-
-        for (UInt32 z = 0UI32; z <= depthSegments; ++z)
-        {
-            const Float32 zPos = (Float32(z) / Float32(depthSegments) - 0.5f);
-            for (UInt32 x = 0UI32; x <= widthSegments; ++x)
-            {
-                const Float32 xPos = (Float32(x) / Float32(widthSegments) - 0.5f);
-                const FVector3 position = { xPos, 0.0f, zPos };
-                const FVector3 normal = { 0.0f, 1.0f, 0.0f };
-                vertexes.push_back(Vertex{ position, normal, color });
-            }
-        }
-
-        for (UInt32 z = 0UI32; z < depthSegments; ++z)
-        {
-            const UInt32 rowStart = z * (widthSegments + 1UI32);
-            const UInt32 nextRowStart = (z + 1UI32) * (widthSegments + 1UI32);
-
-            for (UInt32 x = 0UI32; x < widthSegments; ++x)
-            {
-                UInt32 current = rowStart + x;
-                UInt32 next = rowStart + x + 1UI32;
-                UInt32 nextRowCurrent = nextRowStart + x;
-                UInt32 nextRowNext = nextRowStart + x + 1UI32;
-
-                // First triangle
-                indexes.push_back(current);
-                indexes.push_back(nextRowCurrent);
-                indexes.push_back(next);
-
-                // Second triangle
-                indexes.push_back(next);
-                indexes.push_back(nextRowCurrent);
-                indexes.push_back(nextRowNext);
             }
         }
     }
@@ -191,27 +140,29 @@ namespace GeometryGenerator
                                   DynamicArray<UInt32> &indexes,
                                   const Float32 radius,
                                   const Float32 height,
-                                  const UInt32 segments,
-                                  const Color &color)
+                                  const UInt32 segments)
     {
         assert(segments > 1UI32);
         // Top Circle + Bottom Circle + Centers
         vertexes.reserve(segments * 2UI32 + 2UI32);
-        indexes.reserve((segments * 4UI32) * 3UI32);
+        indexes.reserve(segments * 4UI32 * 3UI32);
     
         // Top Circle center
-        vertexes.push_back(Vertex{ { 0.0f, height, 0.0f }, {}, color });
+        vertexes.push_back(Vertex{ { 0.0f, height, 0.0f }, {}, { 0.5f, 0.5f } });
     
         // Bottom Circle center
-        vertexes.push_back(Vertex{ { 0.0f }, {}, color });
+        vertexes.push_back(Vertex{ { 0.0f }, {}, { 0.5f, 0.5f } });
     
         for (UInt32 i = 0UI32; i < segments; ++i) // Top Circle
         {
             const Float32 angle = 2.0f * Math::PI * Float32(i) / Float32(segments);
             const Float32 x = radius * cos(angle);
             const Float32 z = radius * sin(angle);
+
+            const Float32 u = 0.5f + 0.5f * cos(angle);
+            const Float32 v = 0.5f + 0.5f * sin(angle);
     
-            vertexes.push_back(Vertex{ { x, height, z }, {}, color });
+            vertexes.push_back(Vertex{ { x, height, z }, {}, { u, v } });
         }
     
         for (UInt32 i = 0UI32; i < segments; ++i) // Bottom Circle
@@ -219,8 +170,11 @@ namespace GeometryGenerator
             const Float32 angle = 2.0f * Math::PI * Float32(i) / Float32(segments);
             const Float32 x = radius * cos(angle);
             const Float32 z = radius * sin(angle);
+
+            const Float32 u = 0.5f + 0.5f * cos(angle);
+            const Float32 v = 0.5f + 0.5f * sin(angle);
     
-            vertexes.push_back(Vertex{ { x, 0.0f, z }, {}, color });
+            vertexes.push_back(Vertex{ { x, 0.0f, z }, {}, { u, v } });
         }
     
         for (UInt32 i = 0UI32; i < segments; ++i) // Top
@@ -274,7 +228,7 @@ namespace GeometryGenerator
             vertexes[indexes[i + 2]].normal += normal;
         }
 
-        for (auto &[position, normal, c] : vertexes)
+        for (auto &[position, normal, uv] : vertexes)
         {
             normal = Math::normalize(normal);
         }
@@ -284,8 +238,7 @@ namespace GeometryGenerator
                               DynamicArray<UInt32> &indexes,
                               const Float32 radius,
                               const Float32 height,
-                              const UInt32 segments,
-                              const Color &color)
+                              const UInt32 segments)
     {
         assert(segments > 1UI32);
         // Bottom Circle + Tip
@@ -293,17 +246,20 @@ namespace GeometryGenerator
         indexes.reserve(segments * 2UI32 * 3UI32);
     
         // Tip
-        vertexes.push_back(Vertex{ { 0.0f, height, 0.0f }, {}, color });
+        vertexes.push_back(Vertex{ { 0.0f, height, 0.0f }, {}, { 0.5f, 1.0f } });
         // Circle center
-        vertexes.push_back(Vertex{ {}, {}, color });
+        vertexes.push_back(Vertex{ {}, {}, { 0.5f, 0.0f } });
     
         for (UInt32 i = 0UI32; i < segments; ++i) // Circle
         {
             const Float32 angle = 2.0f * Math::PI * Float32(i) / Float32(segments);
             const Float32 x = radius * cos(angle);
             const Float32 z = radius * sin(angle);
+
+            const Float32 u = 0.5f + 0.5f * cos(angle);
+            const Float32 v = 0.5f + 0.5f * sin(angle);
     
-            vertexes.push_back(Vertex{ { x, 0.0f, z }, {}, color });
+            vertexes.push_back(Vertex{ { x, 0.0f, z }, {}, { u, v } });
         }
     
         for (UInt32 i = 0; i < segments; ++i) // Side
@@ -341,74 +297,74 @@ namespace GeometryGenerator
             vertexes[indexes[i + 2]].normal += normal;
         }
 
-        for (auto &[position, normal, c] : vertexes)
+        for (auto &[position, normal, uv] : vertexes)
         {
             normal = Math::normalize(normal);
         }
     }
-    //
-    // inline Void generate_cube(DynamicArray<Vertex> &vertexes,
-    //                           DynamicArray<UInt32> &indexes)
-    // {
-    //     // UV MAP        Y
-    //     //	    ____     + X
-    //     //     | TT |
-    //     //     |    |
-    //     //	   | BB |
-    //     // ____|    |____
-    //     //| LL   BT   RR |
-    //     //|____      ____|
-    //     //     | FF |
-    //     //     |____|
-    //
-    //     vertexes =
-    //     {
-    //         // Front face
-    //         { { -1.0f, -1.0f, -1.0f }, Color::BLUE  }, // Left-Bottom
-    //         { {  1.0f, -1.0f, -1.0f }, Color::RED   }, // Right-Bottom
-    //         { {  1.0f,  1.0f, -1.0f }, Color::GREEN }, // Right-Top
-    //         { { -1.0f,  1.0f, -1.0f }, Color::YELLOW}, // Left-Top
-    //
-    //         // Back face
-    //         { {  1.0f, -1.0f,  1.0f }, Color::BLUE  }, // Right-Bottom
-    //         { { -1.0f, -1.0f,  1.0f }, Color::RED   }, // Left-Bottom
-    //         { { -1.0f,  1.0f,  1.0f }, Color::GREEN }, // Left-Top
-    //         { {  1.0f,  1.0f,  1.0f }, Color::YELLOW}, // Right-Top
-    //     
-    //         // Left face
-    //         { { -1.0f, -1.0f,  1.0f }, Color::BLUE  }, // Back-Bottom
-    //         { { -1.0f, -1.0f, -1.0f }, Color::RED   }, // Front-Bottom
-    //         { { -1.0f,  1.0f, -1.0f }, Color::GREEN }, // Front-Top
-    //         { { -1.0f,  1.0f,  1.0f }, Color::YELLOW}, // Back-Top
-    //     
-    //         // Right face
-    //         { {  1.0f, -1.0f, -1.0f }, Color::BLUE  }, // Front-Bottom
-    //         { {  1.0f, -1.0f,  1.0f }, Color::RED   }, // Back-Bottom
-    //         { {  1.0f,  1.0f,  1.0f }, Color::GREEN }, // Back-Top
-    //         { {  1.0f,  1.0f, -1.0f }, Color::YELLOW}, // Front-Top
-    //     
-    //         // Top face
-    //         { { -1.0f,  1.0f, -1.0f }, Color::BLUE  }, // Front-Left
-    //         { {  1.0f,  1.0f, -1.0f }, Color::RED   }, // Front-Right
-    //         { {  1.0f,  1.0f,  1.0f }, Color::GREEN }, // Back-Right
-    //         { { -1.0f,  1.0f,  1.0f }, Color::YELLOW}, // Back-Left
-    //     
-    //         // Bottom face
-    //         { { -1.0f, -1.0f,  1.0f }, Color::BLUE  }, // Back-Left
-    //         { {  1.0f, -1.0f,  1.0f }, Color::RED   }, // Back-Right
-    //         { {  1.0f, -1.0f, -1.0f }, Color::GREEN }, // Top-Right
-    //         { { -1.0f, -1.0f, -1.0f }, Color::YELLOW}, // Top-Left
-    //     };
-    //     
-    //     indexes =
-    //     {
-    //          0,  1,  2,  2,  3,  0, // Front
-    //          4,  5,  6,  6,  7,  4, // Back
-    //          8,  9, 10, 10, 11,  8, // Left
-    //         12, 13, 14, 14, 15, 12, // Right
-    //         16, 17, 18, 18, 19, 16, // Top
-    //         20, 21, 22, 22, 23, 20, // Bottom
-    //     };
-    // }
+    
+    inline Void generate_cube(DynamicArray<Vertex> &vertexes,
+                              DynamicArray<UInt32> &indexes)
+    {
+        // UV MAP        Y
+        //      ____     + X
+        //     | TT |
+        //     |    |
+        //     | BB |
+        // ____|    |____
+        //| LL   BT   RR |
+        //|____      ____|
+        //     | FF |
+        //     |____|
+    
+        vertexes =
+        {
+            // Front face
+            { { -1.0f, -1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 1.0f / 3.0f, 0.25f } }, // Left-Bottom
+            { {  1.0f, -1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 2.0f / 3.0f, 0.25f } }, // Right-Bottom
+            { {  1.0f,  1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 2.0f / 3.0f,  0.0f } }, // Right-Top
+            { { -1.0f,  1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 1.0f / 3.0f,  0.0f } }, // Left-Top
+
+            // Back face
+            { {  1.0f, -1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 2.0f / 3.0f,  0.5f } }, // Right-Bottom
+            { { -1.0f, -1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 1.0f / 3.0f,  0.5f } }, // Left-Bottom
+            { { -1.0f,  1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 1.0f / 3.0f, 0.75f } }, // Left-Top
+            { {  1.0f,  1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 2.0f / 3.0f, 0.75f } }, // Right-Top
+
+            // Left face
+            { { -1.0f, -1.0f,  1.0f }, { -1.0f,  0.0f,  0.0f }, { 1.0f / 3.0f,  0.5f } }, // Back-Bottom
+            { { -1.0f, -1.0f, -1.0f }, { -1.0f,  0.0f,  0.0f }, { 1.0f / 3.0f, 0.25f } }, // Front-Bottom
+            { { -1.0f,  1.0f, -1.0f }, { -1.0f,  0.0f,  0.0f }, {        0.0f, 0.25f } }, // Front-Top
+            { { -1.0f,  1.0f,  1.0f }, { -1.0f,  0.0f,  0.0f }, {        0.0f,  0.5f } }, // Back-Top
+
+            // Right face
+            { {  1.0f, -1.0f, -1.0f }, {  1.0f,  0.0f,  0.0f }, { 2.0f / 3.0f, 0.25f } }, // Front-Bottom
+            { {  1.0f, -1.0f,  1.0f }, {  1.0f,  0.0f,  0.0f }, { 2.0f / 3.0f,  0.5f } }, // Back-Bottom
+            { {  1.0f,  1.0f,  1.0f }, {  1.0f,  0.0f,  0.0f }, {        1.0f,  0.5f } }, // Back-Top
+            { {  1.0f,  1.0f, -1.0f }, {  1.0f,  0.0f,  0.0f }, {        1.0f, 0.25f } }, // Front-Top
+
+            // Top face
+            { { -1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f / 3.0f,  1.0f } }, // Front-Left
+            { {  1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 2.0f / 3.0f,  1.0f } }, // Front-Right
+            { {  1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 2.0f / 3.0f, 0.75f } }, // Back-Right
+            { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f / 3.0f, 0.75f } }, // Back-Left
+
+            // Bottom face
+            { { -1.0f, -1.0f,  1.0f }, {  0.0f, -1.0f,  0.0f }, { 1.0f / 3.0f,  0.5f } }, // Back-Left
+            { {  1.0f, -1.0f,  1.0f }, {  0.0f, -1.0f,  0.0f }, { 2.0f / 3.0f,  0.5f } }, // Back-Right
+            { {  1.0f, -1.0f, -1.0f }, {  0.0f, -1.0f,  0.0f }, { 2.0f / 3.0f, 0.25f } }, // Top-Right
+            { { -1.0f, -1.0f, -1.0f }, {  0.0f, -1.0f,  0.0f }, { 1.0f / 3.0f, 0.25f } }, // Top-Left
+        };
+        
+        indexes =
+        {
+             0,  1,  2,  2,  3,  0, // Front
+             4,  5,  6,  6,  7,  4, // Back
+             8,  9, 10, 10, 11,  8, // Left
+            12, 13, 14, 14, 15, 12, // Right
+            16, 17, 18, 18, 19, 16, // Top
+            20, 21, 22, 22, 23, 20, // Bottom
+        };
+    }
 
 }

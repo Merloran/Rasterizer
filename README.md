@@ -16,3 +16,7 @@ Depth Image
 Normal Image
 
 ![Normal Image](Images/Normal.png)
+
+UV Image
+
+![UV Image](Images/UV.png)

@@ -9,10 +9,12 @@ struct FragmentInput;
 struct UniformBuffer
 {
     DynamicArray<Light> lights;
+    DynamicArray<Image> textures;
+    UInt64 currentTextureIndex;
     FMatrix4 model;
     FMatrix4 viewProjection;
     FVector3 viewPosition;
-    bool isVertexLighting = false;
+    bool isLightingOff = false;
 };
 
 struct OutputBuffers

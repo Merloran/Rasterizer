@@ -10,14 +10,17 @@ Int32 main()
     const UVector2 resolution = { 1024, 1024 };
     Image image{ Int32(resolution.x), Int32(resolution.y), Color::BLACK };
     Image normalBuffer{ Int32(resolution.x), Int32(resolution.y), Color::BLACK };
+    Image uvBuffer{ Int32(resolution.x), Int32(resolution.y), Color::BLACK };
     DepthBuffer depth{ resolution.x, resolution.y, 1.0f };
 
     Transform sphereTransform{};
     sphereTransform.set_local_position({ 0.0f, -1.0f, -3.0f });
+    sphereTransform.set_local_euler_degrees({ 0.0f, 180.0f, 0.0f });
 
-    Transform coneTransform{};
-    coneTransform.set_local_position({ 0.0f, 1.0f, -3.0f });
-    coneTransform.set_local_euler_degrees({ 30.0f, 0.0f, 0.0f });
+    Transform cubeTransform{};
+    cubeTransform.set_local_position({ 0.0f, 1.0f, -3.0f });
+    cubeTransform.set_local_scale({ 0.5f, 0.5f, 0.5f });
+    cubeTransform.set_local_euler_degrees({ 45.0f, 45.0f, 45.0f });
 
     Transform torus1Transform{};
     torus1Transform.set_local_position({ -1.0f, 0.0f, -2.0f });
@@ -41,6 +44,12 @@ Int32 main()
     outBuffers.depthBuffer = &depth;
     outBuffers.normalBuffer = &normalBuffer;
     outBuffers.colorBuffer = &image;
+    outBuffers.uvBuffer = &uvBuffer;
+
+    buffer.textures.emplace_back("../Resources/container.png");
+    buffer.textures.emplace_back("../Resources/awesomeface.png");
+    buffer.textures.emplace_back("../Resources/earth.png");
+    buffer.currentTextureIndex = 0;
     //Point
     buffer.lights.emplace_back(FVector3{ 0.0f, 3.0f, -3.0f },
                                FVector4{ 1.0f, 0.9f, 0.2f, 1.0f },
@@ -60,54 +69,52 @@ Int32 main()
 
     buffer.viewProjection = camera.get_projection() * camera.get_view();
     buffer.viewPosition = camera.get_position();
-    buffer.isVertexLighting = false;
+    buffer.isLightingOff = false;
 
     vertexes.clear(); indexes.clear();
     GeometryGenerator::generate_torus(vertexes, 
-                                     indexes, 
-                                     0.4f, 
-                                     0.2f, 
-                                     16, 
-                                     8, 
-                                     Math::to_color(FVector4{ 0.2f, 0.7f, 0.2f, 1.0f }));
+                                      indexes, 
+                                      0.4f, 
+                                      0.2f, 
+                                      16, 
+                                      8);
     buffer.model = torus1Transform.get_local_matrix();
     rasterizer.draw_mesh(vertexes, indexes, outBuffers, buffer);
 
     vertexes.clear(); indexes.clear();
+
     GeometryGenerator::generate_uv_sphere(vertexes, 
-                                     indexes, 
-                                     0.4f, 
-                                     16, 
-                                     16, 
-                                     Math::to_color(FVector4{ 0.8f, 0.0f, 0.2f, 1.0f }));
+                                          indexes, 
+                                          0.4f, 
+                                          16, 
+                                          16);
     buffer.model = sphereTransform.get_local_matrix();
+    buffer.currentTextureIndex = 2;
     rasterizer.draw_mesh(vertexes, indexes, outBuffers, buffer);
 
     vertexes.clear(); indexes.clear();
-    GeometryGenerator::generate_cone(vertexes, 
-                                     indexes, 
-                                     0.4f, 
-                                     1.0f, 
-                                     16, 
-                                     Math::to_color(FVector4{ 0.5f, 0.0f, 0.8f, 1.0f }));
-    buffer.model = coneTransform.get_local_matrix();
+    GeometryGenerator::generate_cube(vertexes,
+                                     indexes);
+    buffer.model = cubeTransform.get_local_matrix();
+    buffer.currentTextureIndex = 0;
     rasterizer.draw_mesh(vertexes, indexes, outBuffers, buffer);
 
     vertexes.clear(); indexes.clear();
     GeometryGenerator::generate_torus(vertexes, 
-                                     indexes, 
-                                     0.4f, 
-                                     0.2f, 
-                                     16, 
-                                     8, 
-                                     Math::to_color(FVector4{ 0.2f, 0.7f, 0.2f, 1.0f }));
+                                      indexes, 
+                                      0.4f, 
+                                      0.2f, 
+                                      16, 
+                                      8);
     buffer.model = torus2Transform.get_local_matrix();
-    buffer.isVertexLighting = true;
+    buffer.isLightingOff = true;
+    buffer.currentTextureIndex = 0;
     rasterizer.draw_mesh(vertexes, indexes, outBuffers, buffer);
 
 
     image.save_to_file("../Images/Result.png");
     normalBuffer.save_to_file("../Images/Normal.png");
+    uvBuffer.save_to_file("../Images/UV.png");
     Image(depth).save_to_file("../Images/Depth.png");
 
     return 0;
